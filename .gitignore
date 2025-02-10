@@ -1,2 +1,5 @@
 restaurant.csv
 restaurant_utf8.csv
+.DS_Store
+.RData
+.Rhistory
