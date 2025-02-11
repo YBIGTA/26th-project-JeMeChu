@@ -14,13 +14,17 @@ class NaverProcessor(BaseDataProcessor):
 
     def preprocess(self):
         """
-        1. 결측값 제거ㅋ
+        1. 결측값 제거
         2. 이상치 제거
         3. 날짜 변환 및 정리
         4. 리뷰 텍스트 전처리
         """
         # 결측값 제거
         self.df_cleaned = self.df.dropna()
+
+        # 좌표 정보 type변환 (str -> float)
+        self.dr_cleaned['좌표정보(X)'] = pd.to_numeric(self.df_cleaned['좌표정보(X)'], errors='coerce')
+        # errors='coerce': 변환 불가능한 건 NaN으로, 가능한 건 수치로 처리함.. 
 
         # 좌표 정보 이상치 제거
         self.df_cleaned = self.df_cleaned[(self.df_cleaned['좌표정보(X)'] > 100000) & 
