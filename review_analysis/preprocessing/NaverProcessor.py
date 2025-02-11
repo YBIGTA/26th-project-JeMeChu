@@ -23,7 +23,7 @@ class NaverProcessor(BaseDataProcessor):
         self.df_cleaned = self.df.dropna()
 
         # 좌표 정보 type변환 (str -> float)
-        self.dr_cleaned['좌표정보(X)'] = pd.to_numeric(self.df_cleaned['좌표정보(X)'], errors='coerce')
+        self.df_cleaned['좌표정보(X)'] = pd.to_numeric(self.df_cleaned['좌표정보(X)'], errors='coerce')
         # errors='coerce': 변환 불가능한 건 NaN으로, 가능한 건 수치로 처리함.. 
 
         # 좌표 정보 이상치 제거
