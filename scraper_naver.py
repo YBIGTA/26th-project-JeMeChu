@@ -62,6 +62,10 @@ class NaverMapScraper:
         """
         self.driver = driver
         self.df = df
+        self.total_rows = len(self.df)
+
+        if "Processed" not in self.df.columns:
+            self.df["Processed"] = ""
 
     def collect_reviews(self) -> None:
         """
@@ -79,6 +83,9 @@ class NaverMapScraper:
 
         # 각 식당에 대해 처리
         for index, row in self.df.iterrows():
+
+            if row["Processed"] == "Yes":
+                continue
             road_address: str = row["도로명주소"]
             business_name: str = row["사업장명"]
 
@@ -114,7 +121,6 @@ class NaverMapScraper:
                 except NoSuchElementException:
                     print(f"[WARNING] '{business_name}' - '더보기' 버튼 없음, 스킵")
                     logging.warning(f"'{business_name}' - '더보기' 버튼 없음, 스킵")
-                    continue
 
                 # 검색 결과 중에서 식당명을 포함한 요소를 찾음
                 place_elements = self.driver.find_elements(By.XPATH, "//strong[contains(@class, 'search_title')]")
@@ -201,9 +207,10 @@ class NaverMapScraper:
                     print("[ERROR] 전화번호 수집 오류 발생:", e)
                     logging.error(f"전화번호 수집 오류 발생: {e}")
 
+                time.sleep(1)
                 # '정보' 탭 클릭
                 try:
-                    review_tab = self.driver.find_element(By.XPATH, "//span[@class='veBoZ' and text()='정보']")
+                    review_tab = self.driver.find_element(By.XPATH, "//a[contains(@class, 'fvwqf') and .//span[contains(@class, 'iNSaH') and text()='정보']]")
                     review_tab.click()
                     print("[INFO] 정보 탭 클릭 완료!")
                     logging.info("정보 탭 클릭 완료!")
@@ -305,7 +312,6 @@ class NaverMapScraper:
                 except NoSuchElementException:
                     print("[WARNING] '리뷰' 탭을 찾지 못했습니다.")
                     logging.warning("'리뷰' 탭을 찾지 못했습니다.")
-                    continue
 
                 # "이런점이 좋았어요" 항목 수집 (최대 4개)
                 try:
@@ -422,13 +428,17 @@ class NaverMapScraper:
                 print(f"[INFO] '{business_name}' 데이터프레임 저장 완료")
                 logging.info(f"'{business_name}' 데이터프레임 저장 완료")
 
+                # 식당 처리 완료 표시
+                self.df.at[index, "Processed"] = "Yes"
+                
                 # 현재 식당 처리가 끝난 후 기본 컨텐츠로 전환
                 self.driver.switch_to.default_content()
 
                 # 진행 상황 저장 
                 temp_output = "restaurant_temp.csv"
                 self.df.to_csv(temp_output, index=False, encoding="utf-8-sig")  
-                print(f"[INFO] 현재 진행 상황 저장됨 - {index+1}개 업데이트")
+                print(f"[INFO] 현재 진행 상황 저장됨 - {self.total_rows}개 중 {index+1}개 업데이트")
+                print(f"[INFO] 현재 csv 상 위치: ")
 
             except Exception as e:
                 print(f"[ERROR] '{business_name}' 크롤링 중 오류 발생: {e}")
@@ -441,9 +451,9 @@ class NaverMapScraper:
         print(f"[INFO] 크롤링 완료! CSV 파일로 저장됨: {output_filename}")
         logging.info(f"크롤링 완료! CSV 파일로 저장됨: {output_filename}")
 
-        if os.path.exists("restaurant_temp.csv"):
-            os.remove("restaurant_temp.csv")
-            print(f"임시 파일 'restaurant_temp.csv' 삭제 완료.")
+        # if os.path.exists("restaurant_temp.csv"):
+        #     os.remove("restaurant_temp.csv")
+        #     print(f"임시 파일 'restaurant_temp.csv' 삭제 완료.")
 
 def main() -> None:
     """
@@ -453,12 +463,25 @@ def main() -> None:
       - NaverMapScraper 인스턴스를 생성하여 크롤링 작업 실행
     """
     input_csv = "restaurant_df.csv"
-    try:
-        df = pd.read_csv(input_csv, encoding="UTF-8")
-    except Exception as e:
-        print(f"[ERROR] CSV 파일 읽기 오류: {e}")
-        logging.error(f"CSV 파일 읽기 오류: {e}")
-        return
+    temp_csv = "restaurant_temp.csv"
+
+    if os.path.exists(temp_csv):
+        try:
+            df = pd.read_csv(temp_csv, encoding="UTF-8")
+            print(f"[INFO] 임시 파일 '{temp_csv}'에서 데이터를 불러왔습니다.")
+        except Exception as e:
+            print(f"[ERROR] 임시 파일 읽기 오류: {e}")
+            logging.error(f"[ERROR] 임시 파일 읽기 오류: {e}")
+            df = pd.read_csv(input_csv, encoding="UTF-8")
+            print(f"[INFO] 원본 파일 '{input_csv}'에서 데이터를 불러왔습니다.")
+    else:
+        try:
+            df = pd.read_csv(input_csv, encoding="UTF-8")
+            print(f"[INFO] 원본 파일 '{input_csv}'에서 데이터를 불러왔습니다.")
+        except Exception as e:
+            print(f"[ERROR] CSV 파일 읽기 오류: {e}")
+            logging.error(f"CSV 파일 읽기 오류: {e}")
+            return
 
     # 크롬 옵션 설정
     chrome_options = Options()
