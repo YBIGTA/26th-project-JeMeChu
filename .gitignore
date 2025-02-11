@@ -6,4 +6,5 @@ __pycache__/
 .dmypy.json
 dmypy.json
 
+# macOS system files
 .DS_Store
