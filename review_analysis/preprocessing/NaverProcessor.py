@@ -5,6 +5,7 @@ import re
 from datetime import datetime
 from scipy.stats import zscore
 from sklearn.feature_extraction.text import TfidfVectorizer
+from review_analysis.preprocessing.base_processor import BaseDataProcessor
 
 class NaverProcessor(BaseDataProcessor):
     def __init__(self, input_path: str, output_path: str):
@@ -62,7 +63,7 @@ class NaverProcessor(BaseDataProcessor):
         """
         처리된 데이터를 CSV로 저장
         """
-        file_name = "preprocessed_naver_data.csv"
+        file_name = "preprocessed_navertemp.csv"
         file_path = os.path.join(self.output_dir, file_name)
         if isinstance(self.df_cleaned, pd.DataFrame):
             self.df_cleaned.to_csv(file_path, index=False, encoding='utf-8-sig')

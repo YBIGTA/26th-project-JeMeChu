@@ -9,7 +9,7 @@ from review_analysis.preprocessing.NaverProcessor import NaverProcessor
 
 # 1. 지원하는 리뷰 사이트별 전처리 클래스 매핑
 PREPROCESS_CLASSES: Dict[str, Type[BaseDataProcessor]] = {
-    "reviews_naver_temp": NaverProcessor,  # 네이버 리뷰 추가 가능
+    "reviews_navertemp": NaverProcessor,  # 네이버 리뷰 추가 가능
     # "reviews_google": GoogleProcessor  # 구글 리뷰 추가 가능
     # 추가적인 사이트가 있으면 여기에 key-value 형식으로 추가
 }
@@ -44,7 +44,7 @@ def run_preprocessing(preprocessor_name: str, csv_file: str, output_dir: str):
     주어진 CSV 파일을 해당 전처리 클래스로 처리하는 함수
     """
     if preprocessor_name in PREPROCESS_CLASSES:
-        print(f"📢 Processing {csv_file} with {preprocessor_name}...")
+        print(f"Processing {csv_file} with {preprocessor_name}...")
 
         # 클래스 인스턴스 생성 및 실행
         preprocessor_class = PREPROCESS_CLASSES[preprocessor_name]
@@ -56,7 +56,7 @@ def run_preprocessing(preprocessor_name: str, csv_file: str, output_dir: str):
 
         print(f"Completed: {csv_file} -> Saved to {output_dir}\n")
     else:
-        print(f"⚠ Error: No matching processor found for {preprocessor_name}")
+        print(f"Error: No matching processor found for {preprocessor_name}")
 
 # 5. 메인 실행 로직
 if __name__ == "__main__":
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         if os.path.exists(csv_file):
             run_preprocessing(args.preprocessor, csv_file, args.output_dir)
         else:
-            print(f"⚠ Error: {csv_file} not found. Please check the file name.")
+            print(f"Error: {csv_file} not found. Please check the file name.")
             sys.exit(1)
 
     # 모든 리뷰 CSV 파일을 처리하는 경우
@@ -82,6 +82,6 @@ if __name__ == "__main__":
 
     # 옵션을 지정하지 않은 경우
     else:
-        print("⚠ Please specify a preprocessor using '-c <processor>' or run all using '-a'.")
+        print("Please specify a preprocessor using '-c <processor>' or run all using '-a'.")
         parser.print_help()
         sys.exit(1)
