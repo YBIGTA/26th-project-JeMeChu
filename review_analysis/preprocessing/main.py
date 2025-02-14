@@ -15,22 +15,37 @@ PREPROCESS_CLASSES: Dict[str, Type[BaseDataProcessor]] = {
 }
 
 # 2. 리뷰 데이터 파일 자동 탐색
-REVIEW_COLLECTIONS = glob.glob(os.path.join("..", "..", "database", "reviews_*.csv"))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # 현재 파일의 절대 경로
+DATABASE_PATH = os.path.abspath(os.path.join(BASE_DIR, "..", "..", "database")) # str임
+if not os.path.exists(DATABASE_PATH):
+    print(f"database dir not found: {DATABASE_PATH}")
 
-# 3. Argument Parser 생성
+REVIEW_COLLECTIONS = glob.glob(os.path.join(DATABASE_PATH, "reviews_*.csv"))
+if not REVIEW_COLLECTIONS:
+    print(f"no csv files found in database dir")
+else:
+    print("main.py 실행")
+
+# 3. Argument Parser 생성 -> 명령어임
 def create_parser() -> ArgumentParser:
     parser = ArgumentParser(description="Preprocess and extract features from review datasets.")
     
+    # 원하는 경로에 저장가능 -o
+    # python main.py -c reviews_navertemp -o ../output/
     parser.add_argument(
         '-o', '--output_dir', type=str, required=False, default="../../database",
         help="Output file directory. Example: ../../database"
     )
     
+    # 특정 reviews_*.csv 파일만 
+    # python main.py -c reviews_navertemp
     parser.add_argument(
         '-c', '--preprocessor', type=str, required=False, choices=PREPROCESS_CLASSES.keys(),
         help=f"Choose a specific processor to use. Available choices: {', '.join(PREPROCESS_CLASSES.keys())}"
     )
     
+    # 모든 reviews_*.csv 한꺼번에 
+    # python main.py -a
     parser.add_argument(
         '-a', '--all', action='store_true',
         help="Run all data preprocessors. Default is False."
