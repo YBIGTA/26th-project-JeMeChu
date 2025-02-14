@@ -17,6 +17,8 @@ import logging
 import re
 import os
 
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../database"))
+
 from typing import Any, Dict, List
 
 import pandas as pd
@@ -446,7 +448,7 @@ class NaverMapScraper:
 
         # 모든 식당 처리 후 드라이버 종료 및 CSV 저장
         self.driver.quit()
-        output_filename = "naver_data.csv"
+        output_filename = os.path.join(base_dir, "reviews_naver.csv")
         self.df.to_csv(output_filename, index=False, encoding="utf-8-sig")
         print(f"[INFO] 크롤링 완료! CSV 파일로 저장됨: {output_filename}")
         logging.info(f"크롤링 완료! CSV 파일로 저장됨: {output_filename}")
@@ -462,8 +464,8 @@ def main() -> None:
       - Selenium WebDriver 및 크롬 옵션 설정
       - NaverMapScraper 인스턴스를 생성하여 크롤링 작업 실행
     """
-    input_csv = "restaurant_df.csv"
-    temp_csv = "restaurant_temp.csv"
+    input_csv = os.path.join(base_dir, "restaurant_df.csv")
+    temp_csv = os.path.join(base_dir, "naver_temp.csv")
 
     if os.path.exists(temp_csv):
         try:
