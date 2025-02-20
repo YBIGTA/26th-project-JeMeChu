@@ -10,7 +10,6 @@ import re
 from typing import List
 import os
 
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../database"))
 
 def convert_file_encoding(input_file: str, output_file: str,
                           input_encoding: str = "CP949",
@@ -85,9 +84,9 @@ def main() -> None:
       1. 원본 파일("restaurant.csv")을 CP949에서 UTF-8로 변환하여 "restaurant_utf8.csv"로 저장합니다.
       2. 변환된 파일을 로드하여 데이터를 필터링 및 전처리한 후 "restaurant_df.csv"로 저장합니다.
     """
-    input_file = os.path.join(base_dir, "restaurant.csv")
-    utf8_file = os.path.join(base_dir, "restaurant_utf8.csv")
-    output_file = os.path.join(base_dir, "restaurant_df.csv")
+    input_file: str = "restaurant.csv"
+    utf8_file: str = "restaurant_utf8.csv"
+    output_file: str = "restaurant_df.csv"
     
     # 파일 인코딩 변환
     convert_file_encoding(input_file, utf8_file, input_encoding="CP949", output_encoding="UTF-8")
