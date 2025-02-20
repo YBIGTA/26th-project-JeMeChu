@@ -1,15 +1,17 @@
 import os
 import glob
 import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from argparse import ArgumentParser
 from typing import Dict, Type
 from review_analysis.preprocessing.base_processor import BaseDataProcessor
 from review_analysis.preprocessing.NaverProcessor import NaverProcessor 
 # from preprocessing.GoogleProcessor import GoogleProcessor  # 나중에 더 추가
 
+print("main.py 실행")
 # 1. 지원하는 리뷰 사이트별 전처리 클래스 매핑
 PREPROCESS_CLASSES: Dict[str, Type[BaseDataProcessor]] = {
-    "reviews_navertemp": NaverProcessor,  # 네이버 리뷰 추가 가능
+    "reviews_naver": NaverProcessor,  # 네이버 리뷰 추가 가능
     # "reviews_google": GoogleProcessor  # 구글 리뷰 추가 가능
     # 추가적인 사이트가 있으면 여기에 key-value 형식으로 추가
 }
@@ -60,6 +62,7 @@ def run_preprocessing(preprocessor_name: str, csv_file: str, output_dir: str):
 
 # 5. 메인 실행 로직
 if __name__ == "__main__":
+    print("parsing 실행")
     parser = create_parser()
     args = parser.parse_args()
 
@@ -67,6 +70,7 @@ if __name__ == "__main__":
 
     # 특정 리뷰 사이트만 실행하는 경우
     if args.preprocessor:
+        print(f"preprocessing {args.preprocessor} 실행")
         csv_file = os.path.join("..", "..", "database", f"{args.preprocessor}.csv")
         if os.path.exists(csv_file):
             run_preprocessing(args.preprocessor, csv_file, args.output_dir)
@@ -76,6 +80,7 @@ if __name__ == "__main__":
 
     # 모든 리뷰 CSV 파일을 처리하는 경우
     elif args.all:
+        print(f"리뷰 데이터 처리 실행: {REVIEW_COLLECTIONS}")
         for csv_file in REVIEW_COLLECTIONS:
             base_name = os.path.splitext(os.path.basename(csv_file))[0]
             run_preprocessing(base_name, csv_file, args.output_dir)
