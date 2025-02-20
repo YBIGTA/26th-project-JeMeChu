@@ -1,0 +1,154 @@
+/* DishSelect.jsx 에서 사용하는 */
+.DishSelect {
+  flex-direction: column;
+  /* width: 100%; */
+  border-radius: 9px;
+  border: 1px solid var(--volcano-3, #ffbb96); /* 위치 잡으려고 색 바구면서 확인 가능 */
+
+  display: flex;
+  flex-wrap: wrap; /* 자식 요소들이 한 줄에 다 들어가지 않으면 다음 줄로 넘어가도록 설정 */
+  justify-content: flex-start; /* 왼쪽 정렬 */
+  gap: 15px; /* 자식 요소들 간의 간격을 설정 */
+  padding: 20px; /* HashAdmin 내부에 패딩을 추가하여 여유 공간을 확보 */
+  box-sizing: border-box;
+  margin: 15px auto;
+}
+
+.dishOption {
+  display: flex;
+  color: #000;
+  font-family: Inter;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: normal;
+}
+
+/* dropdown 메뉴 속 tag 스타일링 */
+.tag-container {
+  display: flex;
+  margin-bottom: 2px;
+}
+
+.tag {
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  display: inline-flex;
+  height: 26px;
+  padding: 0.5px 7px;
+
+  border-radius: 9px;
+  border: 1px solid var(--volcano-5, #ff7a45);
+  color: var(--volcano-6, #fa541c);
+  background-color: white;
+
+  align-items: center;
+  margin-right: 5px;
+  /* margin-bottom: 3px; */
+
+  /* SM/SM Strong */
+  font-family: "SF Pro Text";
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 20px; /* 166.667% */
+}
+
+/* 선택된 태그 스타일 */
+.tag-selected {
+  background-color: var(--volcano-6, #fa541c); /* 배경색 변경 */
+  border-color: var(--volcano-7, #d4380d);
+  color: white; /* 글자색 변경 */
+}
+
+/* cursor 위에 위치하고 있을 시 생기는 css */
+.tag:hover {
+  background-color: var(--volcano-6, #fa541c); /* 배경색 변경 */
+  color: var(--volcano-5, #ff7a45) !important;
+
+  border-color: #ff6b6b !important;
+}
+
+.query-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.custom-input {
+  display: flex;
+  width: 232px;
+  height: 30px;
+  padding: 0px 12px;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid var(--volcano-6, #fa541c);
+  background: var(--colorBgContainer, #fff);
+}
+
+/* hover 시 */
+.ant-input:hover {
+  box-shadow: 0 0 3px rgba(255, 107, 0, 0.5) !important; /* 주황색 그림자 효과 */
+  border-color: var(--volcano-3, #ffbb96) !important;
+}
+
+/* focus 시 */
+.ant-input:focus,
+.ant-input-focused {
+  border-color: #ff6b00 !important;
+  box-shadow: 0 0 5px rgba(255, 107, 0, 0.5) !important; /* 주황색 그림자 효과 */
+  outline: none !important;
+}
+
+.button-container {
+  display: flex;
+  justify-content: flex-end; /* 오른쪽 정렬 */
+  margin-top: 12px; /* 버튼과 위 요소 사이 여백 */
+}
+
+.srch-button {
+  outline: none;
+  box-shadow: none;
+  border: 1px solid var(--volcano-5, #ff7a45);
+
+  color: white;
+  font-family: "SF Pro Text";
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 22px; /* 183.333% */
+  padding: 2px;
+
+  width: 126px;
+  background: var(--volcano-6, #fa541c);
+  border-radius: 6px;
+  border: 1px solid var(--volcano-7, #d4380d);
+}
+
+/* 마우스 올렸을 시 */
+.srch-button:hover {
+  border: 1px solid var(--volcano-7, #d4380d) !important;
+  background-color: var(--volcano-1, #fff2e8) !important;
+  color: var(--volcano-6, #fa541c) !important;
+}
+
+/* 클릭 시 */
+.srch-button:active {
+  outline: none;
+  background: var(--volcano-3, #ffbb96);
+  box-shadow: none;
+  color: var(--volcano-6, #fa541c) !important;
+  border: 1px solid var(--volcano-7, #d4380d) !important;
+  font-weight: 600;
+}
+
+/* 클릭 후 포커스가 남이있을 때  */
+.srch-button:focus,
+.srch-button:focus-visible {
+  outline: none !important;
+  border: 1px solid var(--volcano-7, #d4380d) !important;
+  box-shadow: 0 0 5px rgba(250, 84, 28, 0.5) !important; /* 주황색 그림자 효과 */
+}
