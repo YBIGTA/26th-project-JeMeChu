@@ -36,3 +36,5 @@ frontend/*.local
 *.njsproj
 *.sln
 *.sw?
+
+.env
