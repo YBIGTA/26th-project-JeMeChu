@@ -3,3 +3,7 @@ restaurant_utf8.csv
 .DS_Store
 .RData
 .Rhistory
+.env
+embedding/embedded_data_check.csv
+embedding/embedded_data_temp.csv
+server/embedded_data.csv
