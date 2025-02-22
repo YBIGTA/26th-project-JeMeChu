@@ -3,6 +3,12 @@ import pandas as pd
 import ast
 import json
 
+from sqlalchemy import create_engine
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
 # ✅ Load CSV File
 df = pd.read_csv("SQL_DB.csv")
 
@@ -13,11 +19,11 @@ df["menu"] = df["menu"].apply(lambda x: json.loads(x) if isinstance(x, str) else
 
 # # ✅ Use the correct password
 conn = psycopg2.connect(
-    dbname="neondb",
-    user="neondb_owner",
-    password="npg_JsRt76hDMPUF",  # ✅ Double-check your password!
-    host="ep-bitter-heart-a8s7lv1o-pooler.eastus2.azure.neon.tech",
-    port="5432",
+    dbname=os.getenv("DBNAME"),
+    user=os.getenv("USER"),
+    password=os.getenv("PASSWORD"),  # ✅ Double-check your password!
+    host=os.getenv("HOST"),
+    port=os.getenv("PORT"),
     sslmode="require"  # ✅ This ensures a secure connection
 )
 
