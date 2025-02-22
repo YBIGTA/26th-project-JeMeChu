@@ -9,7 +9,7 @@ load_dotenv() # .env 파일 로딩
 
 # 환경 변수에서 DATABASE_URL 가져오기
 DB_URL = os.getenv("DATABASE_URL")
-print(DB_URL[:5]) # debugging(지우기)
+print("db url partly: ", DB_URL[:5]) # debugging(지우기)
 
 def get_db_connection():
     """
@@ -34,11 +34,11 @@ if __name__ == "__main__":
             cursor.execute("""
                 SELECT column_name 
                 FROM information_schema.columns 
-                WHERE table_name = 'restaurant_updated';
+                WHERE table_name = 'reviews';
             """)
             columns = cursor.fetchall()
 
-            print("restaurant_updated 테이블의 컬럼명:")
+            print("reviews 테이블의 컬럼명:")
             for col in columns:
                 print("-", col[0])  # 컬럼명 출력
 

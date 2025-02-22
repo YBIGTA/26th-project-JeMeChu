@@ -46,7 +46,7 @@ def regenerate_query(details_input):
 def filter_by_expanded_query(filtered_data, expanded_query):
     """
     1차 필터링된 데이터(filtered_data)에서 Query 재생성을 기반으로 세부 필터링 수행.
-    - filtered_data: `menu_filter.py`에서 필터링된 식당 리스트
+    - filtered_data: `ctgy_filter.py`에서 필터링된 식당 리스트
     - expanded_query: JSON 형식의 필터 기준
     """
     if not filtered_data:
@@ -79,11 +79,11 @@ def filter_by_expanded_query(filtered_data, expanded_query):
 
 # 직접 실행할 경우 테스트 코드 추가
 if __name__ == "__main__":
-    from menu_filter import filter_restaurants
+    from ctgy_filter import filter_ctgy
 
     # 1차 필터링 (메뉴/카테고리 기반)
     user_input = "김치찌개"  # 테스트용 입력값
-    filtered_data = filter_restaurants(user_input)
+    filtered_data = filter_ctgy(user_input)
 
     # 2차 필터링 (세부사항 기반)
     details_test = "조용하고 주차 가능한 곳"
