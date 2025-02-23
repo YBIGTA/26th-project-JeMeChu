@@ -10,44 +10,33 @@ restaurant_filter = RestaurantFilter()
 
 # 아예 filter를 하나로 통합..
 class FilterRequest(BaseModel):
-    user_input: str  # 카테고리
+    ctgy: str  # 카테고리
     details: str  # 세부사항
 
 @app.post("/filter_restaurants/")
 async def filter_restaurants(request: FilterRequest):
     """
-    1차 필터링 (카테고리 기반) → 2차 필터링 (세부사항 기반)
+    1차 필터링 (카테고리 기반) → 운영 시간 필터링 → 2차 필터링 (세부사항 기반)
     """
-    id_list = restaurant_filter.filter_ctgy(request.user_input)  # 1차 필터링
-    expanded_query = restaurant_filter.regenerate_query(request.details)  # Query 재생성
-    result = restaurant_filter.filter_by_expanded_query(id_list, expanded_query)  # 2차 필터링
+    # 1차 필터링 (카테고리 기준)
+    id_list = restaurant_filter.filter_ctgy(request.ctgy)
+    
+    # 운영 시간 기준 필터링
+    open_restaurants = restaurant_filter.filter_business_hours(id_list)
+
+    # Query 재생성 (사용자가 입력한 세부 필터를 태그 기반으로 변환)
+    expanded_query = restaurant_filter.regenerate_query(request.details)
+
+    # 2차 필터링 (태그 매칭 수행)
+    result = restaurant_filter.filter_expanded_query(open_restaurants, expanded_query)
 
     return {"restaurants": result}
-
-## 
-class FilterRequest(BaseModel):
-    ctgy: str  # 카테고리 or "아무거나"
-    details: str  # 세부사항
 
 class MenuRequest(BaseModel):
     ctgy: str  # 카테고리명 또는 "아무거나"
 
 class DetailsRequest(BaseModel):
     details: str
-
-@app.post("/filter_restaurants")
-async def filter_restaurants(request: FilterRequest):
-    """
-    사용자가 입력한 메뉴 또는 카테고리 + 세부사항 기반으로 식당 필터링 API
-    """
-    # 1차 필터링 (카테고리)
-    filtered_data = filter_ctgy(request.ctgy)
-
-    # 2차 필터링 (세부사항)
-    expanded_query = regenerate_query(request.details)
-    result = filter_by_expanded_query(filtered_data, expanded_query)
-
-    return {"restaurants": result}
 
 @app.post("/filter_ctgy/")
 async def filter_restaurants_api(request: MenuRequest):

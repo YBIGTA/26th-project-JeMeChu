@@ -6,7 +6,7 @@ import re
 from dotenv import load_dotenv
 
 from database import get_db_connection
-from backend.Constants import FACILITIES, PARKING, VERY_GOOD, SEATS
+from backend.Constants import FACILITIES, PARKING, VERY_GOOD, SEATS, TAG_GROUPS
 # .env 파일 로딩하여 OpenAI API Key 가져오기
 load_dotenv()
 
@@ -38,12 +38,12 @@ class RestaurantFilter:
         try:
             if category == "아무거나":
                 # debugging
-                cursor.execute("SELECT id, name, category, menu, business_hours, facilities, parking, very_good, seat_info FROM reviews LIMIT 3") # 디버깅용(아래 줄로 바꾸기) 
-                # cursor.execute("SELECT id, business_hours FROM reviews LIMIT 3")
+                cursor.execute("SELECT id, name, category, menu, business_hours, facilities, parking, very_good, seat_info FROM reviews") # 디버깅용(아래 줄로 바꾸기) 
+                # cursor.execute("SELECT id, business_hours FROM reviews")
             else:
                 # debugging
-                cursor.execute("SELECT id, name, category, menu, business_hours, facilities, parking, very_good, seat_info FROM reviews WHERE category = %s LIMIT 3", (category,)) # 디버깅용(아래 줄로 바꾸기) 
-                # cursor.execute("SELECT id, business_hours FROM reviews WHERE category = %s LIMIT 3", (category,))
+                cursor.execute("SELECT id, name, category, menu, business_hours, facilities, parking, very_good, seat_info FROM reviews WHERE category = %s", (category,)) # 디버깅용(아래 줄로 바꾸기) 
+                # cursor.execute("SELECT id, business_hours FROM reviews WHERE category = %s", (category,))
             
             results = cursor.fetchall()
 
@@ -210,7 +210,7 @@ class RestaurantFilter:
           출력: {{"facilities": ["대기공간", "유아의자"]}}
 
         - 입력: '5명이서 다 기분 좋게 기분전환할 수 있는 식당'
-        - 출력: {{"seats": ["단체석"], "very_good": ["분위기가 편안해요"]}}
+        - 출력: {{"seat_info": ["단체석"], "very_good": ["분위기가 편안해요"]}}
         """
 
         try:
@@ -227,40 +227,46 @@ class RestaurantFilter:
             print("OpenAI API 요청 실패:", e)
             return {}
 
-    def filter_by_expanded_query(self, id_list, expanded_query):
+    def filter_expanded_query(self, filtered_restaurant_ids, expanded_query):
         """
-        2차 필터링 - Query 재생성 결과를 기반으로 식당 필터링 수행
+        2차 필터링 - Query 재생성 결과를 기반으로 태그 매칭 수행.
         """
-        if not id_list:
-            print("1차 필터링 결과가 비어 있음 → 추가 필터링 없이 반환")
+        if not filtered_restaurant_ids:
+            print("1차 필터링 후 남은 식당이 없음 → 추가 필터링 없이 반환")
             return []
 
         cursor = self.conn.cursor()
-
         try:
-            cursor.execute(
-                "SELECT id, name, facilities, parking, very_good FROM reviews WHERE id IN %s",
-                (tuple(id_list),)
-            )
+            # 운영시간 필터링된 식당 ID 기준으로 태그 데이터 가져오기
+            cursor.execute("""
+                SELECT id, facilities, parking, very_good, seat_info 
+                FROM reviews 
+                WHERE id IN %s
+            """, (tuple(filtered_restaurant_ids),))
             results = cursor.fetchall()
 
             matched_restaurants = []
-
             for res in results:
-                res_id, name = res["id"], res["name"]
-                facilities = json.loads(res["facilities"]) if isinstance(res["facilities"], str) else res["facilities"]
-                parking = res["parking"]
-                highlights = res["very_good"]
+                res_id, facilities, parking, very_good, seat_info = (
+                    res["id"], (res["facilities"]) if res["facilities"] else [],
+                    res["parking"], (res["very_good"]) if res["very_good"] else [],
+                    (res["seat_info"]) if res["seat_info"] else []
+                )
 
-                matched_details = {
-                    "식당명": name,
-                    "편의시설": [f for f in expanded_query.get("시설", []) if f in facilities],
-                    "주차": [p for p in expanded_query.get("주차", []) if p in parking],
-                    "이런 점이 좋았어요": [h for h in expanded_query.get("이런 점이 좋았어요", []) if h in highlights],
-                }
-
-                if any(matched_details.values()):
-                    matched_restaurants.append(matched_details)
+                # 태그 매칭 검사
+                match_found = False
+                for category, tags in expanded_query.items():
+                    if category == "facilities" and any(tag in facilities for tag in tags):
+                        match_found = True
+                    if category == "parking" and parking in tags:
+                        match_found = True
+                    if category == "very_good" and any(tag in very_good for tag in tags):
+                        match_found = True
+                    if category == "seats" and any(tag in seat_info for tag in tags):
+                        match_found = True
+                print(match_found)
+                if match_found:
+                    matched_restaurants.append(res_id)
 
             return matched_restaurants
 
@@ -269,7 +275,7 @@ class RestaurantFilter:
             return []
         finally:
             cursor.close()
-            self.conn.close()
+
 
 
 ## debugging
@@ -277,25 +283,39 @@ if __name__ == "__main__":
     # 필터링 객체 생성
     restaurant_filter = RestaurantFilter()
 
-    # # 1-1차 필터링: 카테고리 선택 (예: '한식')
-    # test_category = "한식"  # 테스트할 카테고리
-    # filtered_data = restaurant_filter.filter_ctgy(test_category)
+    # 1-1차 필터링: 카테고리 선택 (예: '한식')
+    test_category = "한식"  # 테스트할 카테고리
+    filtered_data = restaurant_filter.filter_ctgy(test_category)
     
-    # print(f"\n'{test_category}' 카테고리의 1차 필터링 결과 (ID + 운영시간):")
-    # print(json.dumps(filtered_data, indent=2, ensure_ascii=False))
+    print(f"\n'{test_category}' 카테고리의 1차 필터링 결과 (ID + 운영시간):")
+    print(json.dumps(filtered_data, indent=2, ensure_ascii=False))
 
-    # # 1-2차 필터링: 운영시간 필터링
-    # open_restaurants = restaurant_filter.filter_business_hours(filtered_data)
+    # 1-2차 필터링: 운영시간 필터링
+    open_restaurants = restaurant_filter.filter_business_hours(filtered_data)
 
-    # print(f"\n'{test_category}' 카테고리에서 운영 중인 식당 리스트:")
-    # print(json.dumps(open_restaurants, indent=2, ensure_ascii=False))
+    print(f"\n'{test_category}' 카테고리에서 운영 중인 식당 리스트:")
+    print(json.dumps(open_restaurants, indent=2, ensure_ascii=False))
 
     # query 재생성
-    
-    details_test = "아늑한 분위기에서 유아의자 있는 곳에서 먹고 싶어"   
-    details_test = "노키즈존이고 비건 메뉴 있는 식당 알려줘"
-    details_test = "나 지금 오늘 아침 5시에 일어나서 화가 너무 많은데 지금 머리도 뜨겁고 플젝도 어렵고 우리 팀플하고 있어서 5명이서 다 기분좋게 기분전환할 수 있는 식당좀"
-    expanded_query = restaurant_filter.regenerate_query(details_test)
-    
-    print(f"\n'{details_test}'에 대한 확장 쿼리:")
-    print(json.dumps(expanded_query, indent=2, ensure_ascii=False))
+    print("\n[Query 재생성] LLM을 통한 태그 변환")
+    test_queries = [
+        # "아늑한 분위기에서 유아의자 있는 곳에서 먹고 싶어",
+        "노키즈존이고 비건 메뉴 있는 식당 알려줘",
+        # "나 지금 오늘 아침 5시에 일어나서 화가 너무 많은데 지금 머리도 뜨겁고 플젝도 어렵고 우리 팀플하고 있어서 5명이서 다 기분좋게 기분전환할 수 있는 식당좀",
+        # "주차 가능한 곳에서 단체석 있는 식당 추천해줘",
+        # "야외 테라스가 있고, 조용한 분위기의 레스토랑",
+        # "배달 가능한 곳 중에서 포장 할인되는 곳 알려줘"
+    ]
+
+    for details_test in test_queries:
+        expanded_query = restaurant_filter.regenerate_query(details_test)
+
+        print(f"\n'{details_test}'에 대한 확장 쿼리:")
+        print(json.dumps(expanded_query, indent=2, ensure_ascii=False))
+
+        print("\n[3차 필터링] 태그 기반 필터링")
+        final_filtered_restaurants = restaurant_filter.filter_expanded_query(open_restaurants, expanded_query)
+
+        print(f"\n최종 필터링 결과 (태그 기반):")
+        print(json.dumps(final_filtered_restaurants, indent=2, ensure_ascii=False))
+
