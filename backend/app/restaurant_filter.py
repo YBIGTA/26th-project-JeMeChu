@@ -6,8 +6,7 @@ import re
 from dotenv import load_dotenv
 
 from database import get_db_connection
-import backend.Constants as Constants
-
+from backend.Constants import FACILITIES, PARKING, VERY_GOOD, SEATS
 # .env 파일 로딩하여 OpenAI API Key 가져오기
 load_dotenv()
 
@@ -24,9 +23,9 @@ class RestaurantFilter:
         self.conn = get_db_connection()
         self.api_key = os.getenv("OPENAI_API_KEY_QUERY")
         if not self.api_key:
-            raise ValueError("🚨 OpenAI API Key가 설정되지 않았습니다!")
+            raise ValueError("OpenAI API Key가 설정되지 않았습니다!")
         
-
+        self.client = openai.OpenAI(api_key=self.api_key)
 
     def filter_ctgy(self, category: str):
         """
@@ -107,7 +106,7 @@ class RestaurantFilter:
         print(f"현재 시간: {current_day_kr}, {now_time}")
         print(type(now_time))
 
-        # 🔹 business_hours가 NaN이거나 비어있는 경우 → 식당을 포함 (True 반환)
+        # business_hours가 NaN이거나 비어있는 경우 → 식당을 포함 (True 반환)
         if not business_hours or business_hours.strip() in ["NaN", ""]:
             print("운영시간 정보 없음 → 그냥 식당 포함")
             return True  # 운영 시간 정보가 없는 경우 식당 포함
@@ -185,39 +184,40 @@ class RestaurantFilter:
         """
         system_prompt = f"""
         사용자의 검색어를 분석하여 JSON 형식으로 반환하세요.
-        - 반드시 아래 제공된 리스트 중에서만 선택하여 반환하세요.
+        - 반드시 아래 제공된 리스트 속 단어 중에서만 선택하여 반환하세요.
         - JSON 형식으로만 출력하세요.
-        - 🚗 **주차 관련 키워드(주차 가능, 무료 주차 등)가 있으면 `parking`을 무조건 포함하세요.**
+        - **주차 관련 키워드(주차 가능, 무료 주차 등)가 있으면 `parking`을 무조건 포함하세요.**
+        - **좌석(seats) 관련 단어(단체석, 룸, 바테이블 등)가 있으면 `seats`를 포함하세요.**
         - 다른 카테고리는 중요도를 고려하여 최대 2개만 선택하세요.
 
         ### 사용 가능한 값:
-        - facilities: {Constants.FACILITIES}
-        - parking: {Constants.PARKING}
-        - very_good: {Constants.VERY_GOOD}
-        - seats: {Constants.SEATS}
+        - **facilities**: {", ".join(FACILITIES)}
+        - **parking**: {", ".join(PARKING)}
+        - **very_good**: {", ".join(VERY_GOOD)}
+        - **seat_info**: {", ".join(SEATS)}
 
         ### 예시:
         - 입력: '김치찌개 조용하고 주차할 수 있는 데서 먹고 싶어'
-          출력: {{"menu": ["김치찌개"], "very_good": ["조용해요"], "parking": ["주차 가능"]}}
+          출력: {{"very_good": ["조용히 쉬기 좋아요"], "parking": ["주차 가능"]}}
         
         - 입력: '단체석 있고 와인 추천 잘해주는 곳'
-          출력: {{"facilities": ["단체석", "와인 페어링"]}}
+          출력: {{"facilities": ["와인 페어링"], "seat_info": ["와인 페어링"]}}
 
         - 입력: '아늑한 분위기의 조용한 식당'
-          출력: {{"very_good": ["아늑해요", "조용해요"]}}
+          출력: {{"very_good": ["아늑해요", "조용히 쉬기 좋아요"]}}
 
         - 입력: '대기공간 있고, 유아의자 있는 곳'
           출력: {{"facilities": ["대기공간", "유아의자"]}}
+
+        - 입력: '5명이서 다 기분 좋게 기분전환할 수 있는 식당'
+        - 출력: {{"seats": ["단체석"], "very_good": ["분위기가 편안해요"]}}
         """
 
         try:
-            client = openai.OpenAI()  
-            response = client.chat.completions.create(
+            response = self.client.chat.completions.create(  # 최신 API 방식 사용
                 model="gpt-4-turbo",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": details_input}
-                ]
+                messages=[{"role": "system", "content": system_prompt},
+                          {"role": "user", "content": details_input}]
             )
 
             expanded_query = json.loads(response.choices[0].message.content)
@@ -277,22 +277,25 @@ if __name__ == "__main__":
     # 필터링 객체 생성
     restaurant_filter = RestaurantFilter()
 
-    # 1-1차 필터링: 카테고리 선택 (예: '한식')
-    test_category = "한식"  # 테스트할 카테고리
-    filtered_data = restaurant_filter.filter_ctgy(test_category)
+    # # 1-1차 필터링: 카테고리 선택 (예: '한식')
+    # test_category = "한식"  # 테스트할 카테고리
+    # filtered_data = restaurant_filter.filter_ctgy(test_category)
     
-    print(f"\n'{test_category}' 카테고리의 1차 필터링 결과 (ID + 운영시간):")
-    print(json.dumps(filtered_data, indent=2, ensure_ascii=False))
+    # print(f"\n'{test_category}' 카테고리의 1차 필터링 결과 (ID + 운영시간):")
+    # print(json.dumps(filtered_data, indent=2, ensure_ascii=False))
 
-    # 1-2차 필터링: 운영시간 필터링
-    open_restaurants = restaurant_filter.filter_business_hours(filtered_data)
+    # # 1-2차 필터링: 운영시간 필터링
+    # open_restaurants = restaurant_filter.filter_business_hours(filtered_data)
 
-    print(f"\n'{test_category}' 카테고리에서 운영 중인 식당 리스트:")
-    print(json.dumps(open_restaurants, indent=2, ensure_ascii=False))
+    # print(f"\n'{test_category}' 카테고리에서 운영 중인 식당 리스트:")
+    # print(json.dumps(open_restaurants, indent=2, ensure_ascii=False))
 
-    # # query 재생성
-    # details_test = "김치찌개 조용하고 주차할 수 있는 데서 먹고 싶어"
-    # expanded_query = restaurant_filter.regenerate_query(details_test)
+    # query 재생성
     
-    # print(f"\n🔹 '{details_test}'에 대한 확장 쿼리:")
-    # print(json.dumps(expanded_query, indent=2, ensure_ascii=False))
+    details_test = "아늑한 분위기에서 유아의자 있는 곳에서 먹고 싶어"   
+    details_test = "노키즈존이고 비건 메뉴 있는 식당 알려줘"
+    details_test = "나 지금 오늘 아침 5시에 일어나서 화가 너무 많은데 지금 머리도 뜨겁고 플젝도 어렵고 우리 팀플하고 있어서 5명이서 다 기분좋게 기분전환할 수 있는 식당좀"
+    expanded_query = restaurant_filter.regenerate_query(details_test)
+    
+    print(f"\n'{details_test}'에 대한 확장 쿼리:")
+    print(json.dumps(expanded_query, indent=2, ensure_ascii=False))
