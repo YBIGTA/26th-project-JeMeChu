@@ -264,9 +264,13 @@ class RestaurantFilter:
                         match_found = True
                     if category == "seats" and any(tag in seat_info for tag in tags):
                         match_found = True
-                print(match_found)
+                print(f"식당 {res_id} 매칭 결과: {match_found}")
                 if match_found:
                     matched_restaurants.append(res_id)
+                
+            if not matched_restaurants:
+                print("태그 매칭된 식당이 없음 → 기존 식당 ID 전체 반환")
+                return filtered_restaurant_ids
 
             return matched_restaurants
 
@@ -300,7 +304,8 @@ if __name__ == "__main__":
     print("\n[Query 재생성] LLM을 통한 태그 변환")
     test_queries = [
         # "아늑한 분위기에서 유아의자 있는 곳에서 먹고 싶어",
-        "노키즈존이고 비건 메뉴 있는 식당 알려줘",
+        # "노키즈존이고 비건 메뉴 있는 식당 알려줘",
+        "조용",
         # "나 지금 오늘 아침 5시에 일어나서 화가 너무 많은데 지금 머리도 뜨겁고 플젝도 어렵고 우리 팀플하고 있어서 5명이서 다 기분좋게 기분전환할 수 있는 식당좀",
         # "주차 가능한 곳에서 단체석 있는 식당 추천해줘",
         # "야외 테라스가 있고, 조용한 분위기의 레스토랑",
