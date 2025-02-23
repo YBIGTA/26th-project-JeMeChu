@@ -28,14 +28,14 @@ print("INDEX_NAME:", "vectorspace")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 INDEX_NAME = "vectorspace"
+POSTGRES_CONN_STR = os.getenv("POSTGRES_CONN_STR")
 
 # Pinecone 클라이언트 초기화 및 인덱스 연결
 pc = Pinecone(api_key=PINECONE_API_KEY)
 index = pc.Index(INDEX_NAME)
 
 # DB 연결
-restaurant_db_url = "postgresql://neondb_owner:npg_JsRt76hDMPUF@ep-bitter-heart-a8s7lv1o-pooler.eastus2.azure.neon.tech/neondb?sslmode=require"
-restaurant_engine = create_engine(restaurant_db_url)
+restaurant_engine = create_engine(POSTGRES_CONN_STR)
 
 print("Embeddings와 Pinecone 클라이언트가 정상적으로 초기화되었으며 DB에 연결됐습니다.")
 
