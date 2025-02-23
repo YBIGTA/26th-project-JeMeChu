@@ -8,9 +8,8 @@ const Home = () => {
   const headerText = "머뭇거리지 말고 머무거로 맛집을 찾아보세요!";
   const [displayHeader, setDisplayHeader] = useState(" ");
   const [headerIndex, setHeaderIndex] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [isChecked, setIsChecked] = useState(false);
-  const [query, setQuery] = useState("");
+  const [selectedOption, setSelectedOption] = useState<string>(""); // 카테고리&체크박스스
+  const [details, setDetails] = useState("");
   const router = useRouter();
   // 상단 문구 타이핑 효과
   useEffect(() => {
@@ -24,31 +23,47 @@ const Home = () => {
     }
   }, [headerIndex, headerText]);
 
-  // 버튼 클릭 시 상태 변경 함수
-  const handleCategoryClick = (category) => {
-    setSelectedCategory((prev) => (prev === category ? null : category)); // 동일한 버튼 누르면 취소
+  // 🔥 Enter 키 입력 처리 함수
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch(); // Enter 키를 누르면 검색 실행
+    }
   };
 
-  // 입력된 query를 백엔드로 보내는 함수
+  // 버튼 클릭 시 상태 변경 함수
+  const handleCategoryClick = (ctgy: string) => {
+    setSelectedOption((prev) => (prev === ctgy ? "" : ctgy)); // 동일한 버튼 누르면 취소
+  };
+
+  // 체크박스 클릭 시 상태 변경 함수 (체크박스 선택 시 카테고리 해제)
+  const handleCheckboxClick = () => {
+    setSelectedOption((prev) => (prev === "아무거나" ? "" : "아무거나"));
+  };  
+
+  // 입력된 details를 백엔드로 보내는 함수
   const handleSearch = async () => {
     try {
-      const response = await fetch('/api/search', {
-        method: 'POST',
+      const requestBody = {
+        ctgy: selectedOption,
+        details,
+         // ✅ 체크박스 OR 카테고리 값 (하나만 전송)
+      };
+
+      console.log("📢 검색 요청 데이터:", requestBody);
+
+      const response = await fetch("/api/search", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          query, // 사용자 입력
-          selectedCategory, // 선택된 카테고리
-          isChecked, // 체크박스(아무거나)
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       // ✅ 기존 검색 기록 불러오기
       const previousHistory = JSON.parse(localStorage.getItem("searchHistory") || "[]");
 
-      // ✅ 새 검색 기록 추가 (결과 없이 query만 저장)
-      const newEntry = { keyword: query, results: [] };
+      // ✅ 새 검색 기록 추가 (결과 없이 details만만 저장)
+      const newEntry = { keyword: details, results: [] };
       const updatedHistory = [newEntry, ...previousHistory].slice(0, 10); // 최근 10개 기록 유지
 
       // ✅ 검색 기록을 로컬 스토리지에 저장
@@ -59,7 +74,7 @@ const Home = () => {
 
 
     } catch (error) {
-      console.error('Error sending query:', error);
+      console.error('Error sending details:', error);
     }
 
 
@@ -83,18 +98,18 @@ const Home = () => {
 
         {/* 버튼 리스트 */}
         <div className="grid grid-cols-3 gap-x-[22px] gap-y-[15px] justify-center mt-[20px]">
-          {["한식", "중식", "일식", "양식", "주점", "기타"].map((category) => (
+          {["한식", "중식", "일식", "양식", "주점", "기타"].map((ctgy) => (
             <button
-              key={category}
-              onClick={() => handleCategoryClick(category)}
+              key={ctgy}
+              onClick={() => handleCategoryClick(ctgy)}
               className={`w-[76px] h-[42px] flex items-center justify-center border border-[#6F6F6F] rounded-full font-['Roboto'] text-[19px] font-bold leading-normal transition-all 
               ${
-                selectedCategory === category
+                selectedOption === ctgy
                   ? "bg-[#F3623F] text-white" // Pressed 상태
                   : "text-[#CFA39E] bg-white hover:bg-gray-100" // Default 및 Hover 상태
               }`}
             >
-              {category}
+              {ctgy}
             </button>
           ))}
         </div>
@@ -106,10 +121,10 @@ const Home = () => {
           {/* 체크박스 */}
           <div 
             className={`w-[20px] h-[20px] flex items-center justify-center rounded-sm border-[1px] border-[#F8522A] cursor-pointer
-              ${isChecked ? "bg-[#F3623F]" : "bg-white"}`} 
-            onClick={() => setIsChecked(!isChecked)} // 체크박스 클릭 시 상태 변경
+              ${selectedOption == "아무거나" ? "bg-[#F3623F]" : "bg-white"}`} 
+            onClick={handleCheckboxClick} // 체크박스 클릭 시 상태 변경
           >
-            {isChecked && (
+            {selectedOption && (
               <svg xmlns="http://www.w3.org/2000/svg" width="10.76" height="8.37px" viewBox="0 0 14 12" fill="none">
                 <path 
                   d="M1.96533 7.1813L5.3807 10.5284L12.7238 2.16071" 
@@ -134,11 +149,11 @@ const Home = () => {
       <div className="w-[371.159px] h-[49.879px] flex items-center border border-[#6F6F6F] bg-[rgba(230,230,230,0.82)] rounded-[40px] px-4 mt-6">
         <input
           type="text"
-          placeholder="ex. 조용하고 주차장이 있는 곳 추천해줘"
+          placeholder="ex. 조용하고 주차가 되는 곳 추천해줘"
           className="flex-1 bg-transparent outline-none text-gray-600 px-2 focus:ring-2 focus:ring-[#F3623F] focus:ring-offset-2 rounded-lg"
-          value={query} 
-          onChange={(e) => setQuery(e.target.value)} // 타이핑 시 query 상태 업데이트
-        
+          value={details} 
+          onChange={(e) => setDetails(e.target.value)} // 타이핑 시 details 상태 업데이트
+          onKeyDown={handleKeyDown} // Enter 키 입력 시 검색 함수 실행
         />
         <button
           className="w-[30px] h-[30px] flex items-center justify-center rounded-full bg-[#FC4A37]"
