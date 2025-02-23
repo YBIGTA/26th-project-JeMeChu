@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { FaSearch } from "react-icons/fa";
 import { useRouter } from 'next/navigation';
 
+const API_URL = process.env.NEXT_PUBLIC_API; // 환경 변수에서 API 주소 가져오기
+
 const Home = () => {
   const headerText = "머뭇거리지 말고 머무거로 맛집을 찾아보세요!";
   const [displayHeader, setDisplayHeader] = useState(" ");
@@ -50,15 +52,16 @@ const Home = () => {
       };
 
       console.log("📢 검색 요청 데이터:", requestBody);
+      console.log("🚀 API_URL:", API_URL); // 터미널에서 값 확인
 
-      const response = await fetch("/api/search", {
+      const response = await fetch(`${API_URL}/filter_restaurants/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody),
       });
-
+      console.log("🚀 검색 요청 결과:", response);
       // ✅ 기존 검색 기록 불러오기
       const previousHistory = JSON.parse(localStorage.getItem("searchHistory") || "[]");
 

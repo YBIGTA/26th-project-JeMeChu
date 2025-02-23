@@ -34,7 +34,7 @@ const RecommendationsPage = () => {
           business_hours: "월-금 10:30 - 21:00",
           facilities: ["무선 인터넷", "혼밥 가능"],
           parking: "없음",
-          imageUrls: ['https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20230517_183%2F16843209459919J2Ks_JPEG%2F20230517_195451.jpg', 'https://search.pstatic.net/common/?autoRotate=true&type=w278_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20240123_144%2F1705965219556idYbd_JPEG%2F20240115_190123.jpg', 'https://search.pstatic.net/common/?autoRotate=true&type=w278_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20230427_204%2F1682560404114xPaQ1_JPEG%2F20230426_101009.jpg'],
+          imageUrls: [],
         },
         {
           name: "연남동 브런치카페",
@@ -192,7 +192,7 @@ const RecommendationsPage = () => {
             <div key={index} className="flex flex-col bg-gray-100 rounded-xl shadow-md overflow-hidden mb-6">
               {/* ✅ Restaurant Image */}
               <img
-                src={restaurant.imageUrls?.[0]} // 🔥 Use first image, fallback to default
+                src={restaurant.imageUrls?.[0] || "https://i.imgur.com/zAzV9Db.png"} // 🔥 Use first image, fallback to default
                 alt={restaurant.name}
                 className="w-full h-[200px] object-cover"
               />
