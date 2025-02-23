@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from restaurant_filter import RestaurantFilter
 from rag import RAGEngine
+import json
 
 app = FastAPI()
 
@@ -33,7 +34,7 @@ async def filter_restaurants(request: FilterRequest):
     # RAG 모듈 실행: allowed_ids (최종 필터링된 식당 id 리스트)를 대상으로 벡터 검색 및 추천 생성
     rag_result = rag_engine.run(request.details, final_filtered_restaurant)
     
-    return {"result": rag_result}
+    return json.loads(rag_result)
 
 if __name__ == "__main__":
     import uvicorn
