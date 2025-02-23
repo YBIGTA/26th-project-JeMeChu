@@ -34,11 +34,11 @@ if __name__ == "__main__":
             cursor.execute("""
                 SELECT column_name 
                 FROM information_schema.columns 
-                WHERE table_name = 'reviews';
+                WHERE table_name = 'final';
             """)
             columns = cursor.fetchall()
 
-            print("reviews 테이블의 컬럼명:")
+            print("final 테이블의 컬럼명:")
             for col in columns:
                 print("-", col[0])  # 컬럼명 출력
 
