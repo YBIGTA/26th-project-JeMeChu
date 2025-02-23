@@ -34,18 +34,6 @@ def parse_menu(menu_data):
     menu_list = safe_json_loads(menu_data, default=[])
     return [item[0] for item in menu_list] if menu_list else ["메뉴 정보 없음"]
 
-
-# def parse_keywords(keyword_data):
-#     """keyword 열에서 facilities, parking, very_good을 분리"""
-#     keyword_list = safe_json_loads(keyword_data, default=[])
-    
-#     facilities = keyword_list[:-4] if len(keyword_list) > 4 else keyword_list  # 앞부분 = 시설 정보
-#     very_good = keyword_list[-4:] if len(keyword_list) > 4 else []  # 마지막 4개 = "이런 점이 좋았어요"
-#     parking = "주차 가능" if any("주차 가능" in kw for kw in keyword_list) else "주차 불가"
-
-#     return facilities, parking, very_good
-
-
 def filter_by_category_from_db(category: str):
     """
     PostgreSQL에서 카테고리에 해당하는 식당을 필터링.
@@ -57,24 +45,23 @@ def filter_by_category_from_db(category: str):
     cursor = conn.cursor()
     try:
         if category == "아무거나":
-            cursor.execute("SELECT id, name, category, menu, business_hours, facilities, parking, very_good, seat_info FROM reviews LIMIT 3") # SELECT id, name, category, menu, business_hours, , facilities, parking, very_good FROM reviews 
+            cursor.execute("SELECT id, name, category, menu, business_hours, facilities, parking, very_good, seat_info FROM reviews LIMIT 3") # 디버깅용(아래 줄로 바꾸기) 
+            # cursor.execute("SELECT id FROM reviews LIMIT 3") # SELECT id, name, category, menu, business_hours, , facilities, parking, very_good FROM reviews 
         else:
-            cursor.execute("SELECT id, name, category, menu, business_hours, facilities, parking, very_good, seat_info FROM reviews WHERE category = %s LIMIT 3", (category,))
-        
+            cursor.execute("SELECT id, name, category, menu, business_hours, facilities, parking, very_good, seat_info FROM reviews WHERE category = %s LIMIT 3", (category,)) # 디버깅용(아래 줄로 바꾸기) 
+            # cursor.execute("SELECT id FROM reviews WHERE category = %s LIMIT 3", (category,)) # SELECT id, name, category, menu, business_hours, , facilities, parking, very_good FROM reviews 
+ 
         results = cursor.fetchall()
+
+        ## 새로운 쿼리 추가: 전체 식당 개수 확인 (debugging)
+        cursor.execute("SELECT COUNT(*) FROM reviews WHERE category = %s", (category,))
+        total_count = cursor.fetchone()[0]
+
         conn.close()
 
+        ## debugging용
         filtered_results = []
         for res in results:
-            # menu_list = []
-            # if isinstance(res["menu"], str):  # JSON 변환 처리
-            #     try:
-            #         menu_list = json.loads(res["menu"]) if res["menu"] else []
-            #     except json.JSONDecodeError:
-            #         menu_list = []
-            # elif isinstance(res["menu"], list):
-            #     menu_list = res["menu"]
-
             filtered_results.append({
                 "id": res["id"],
                 "name": res["name"],
@@ -88,8 +75,16 @@ def filter_by_category_from_db(category: str):
                 "very_good": res["very_good"],
                 "seat_info": res["seat_info"]
             })
+        
+        # 디버깅 출력 (필터링된 데이터와 전체 개수 확인)
+        print(f"전체 {category} 식당 개수: {total_count}")
+        print(f"{category} 카테고리 필터링 결과:")
+        print("ctgy filtered data:", json.dumps(filtered_results, indent=2, ensure_ascii=False))
 
-        return filtered_results
+        ## debugging용
+
+        # id만 리스트로 반환
+        return [res["id"] for res in results]
 
     except Exception as e:
         print("DB 조회 오류:", e)
@@ -98,7 +93,7 @@ def filter_by_category_from_db(category: str):
         cursor.close()
         conn.close()
 
-
+# 이건 나중에 menu 다룰 때 하기 (ctgy filter랑 다름..)
 def filter_by_menu_from_db(menu_item: str):
     """
     PostgreSQL에서 특정 메뉴가 포함된 식당을 필터링.
@@ -159,9 +154,9 @@ def filter_by_menu_from_db(menu_item: str):
 
 # 직접 실행할 경우 테스트 코드 추가
 if __name__ == "__main__":
-    test_inputs = ["한식", "김치찌개", "아무거나"]
+    test_inputs = ["양식"]
 
     for user_input in test_inputs:
         print(f"\n'{user_input}'에 해당하는 식당 필터링 결과:")
         result = filter_ctgy(user_input)
-        print(json.dumps(result, indent=2, ensure_ascii=False))  # JSON 형식으로 깔끔하게 출력
+        print("id: " + json.dumps(result, indent=2, ensure_ascii=False))  # JSON 형식으로 깔끔하게 출력

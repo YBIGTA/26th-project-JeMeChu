@@ -3,10 +3,28 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from ctgy_filter import filter_ctgy
 from details_filter import regenerate_query, filter_by_expanded_query
+from restaurant_filter import RestaurantFilter
 
 app = FastAPI()
+restaurant_filter = RestaurantFilter()
 
 # 아예 filter를 하나로 통합..
+class FilterRequest(BaseModel):
+    user_input: str  # 카테고리
+    details: str  # 세부사항
+
+@app.post("/filter_restaurants/")
+async def filter_restaurants(request: FilterRequest):
+    """
+    1차 필터링 (카테고리 기반) → 2차 필터링 (세부사항 기반)
+    """
+    id_list = restaurant_filter.filter_ctgy(request.user_input)  # 1차 필터링
+    expanded_query = restaurant_filter.regenerate_query(request.details)  # Query 재생성
+    result = restaurant_filter.filter_by_expanded_query(id_list, expanded_query)  # 2차 필터링
+
+    return {"restaurants": result}
+
+## 
 class FilterRequest(BaseModel):
     ctgy: str  # 카테고리 or "아무거나"
     details: str  # 세부사항
