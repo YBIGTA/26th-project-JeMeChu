@@ -38,18 +38,18 @@ class RestaurantFilter:
         try:
             if category == "아무거나":
                 # debugging
-                cursor.execute("SELECT id, name, category, menu, business_hours, facilities, parking, very_good, seat_info FROM reviews") # 디버깅용(아래 줄로 바꾸기) 
-                # cursor.execute("SELECT id, business_hours FROM reviews")
+                cursor.execute("SELECT id, name, category, menu, business_hours, facilities, parking, very_good, seat_info FROM final") # 디버깅용(아래 줄로 바꾸기) 
+                # cursor.execute("SELECT id, business_hours FROM final")
             else:
                 # debugging
-                cursor.execute("SELECT id, name, category, menu, business_hours, facilities, parking, very_good, seat_info FROM reviews WHERE category = %s", (category,)) # 디버깅용(아래 줄로 바꾸기) 
-                # cursor.execute("SELECT id, business_hours FROM reviews WHERE category = %s", (category,))
+                cursor.execute("SELECT id, name, category, menu, business_hours, facilities, parking, very_good, seat_info FROM final WHERE category = %s", (category,)) # 디버깅용(아래 줄로 바꾸기) 
+                # cursor.execute("SELECT id, business_hours FROM final WHERE category = %s", (category,))
             
             results = cursor.fetchall()
 
             ## debugging
             # 새로운 쿼리 추가: 전체 식당 개수 확인 
-            cursor.execute("SELECT COUNT(*) FROM reviews WHERE category = %s", (category,))
+            cursor.execute("SELECT COUNT(*) FROM final WHERE category = %s", (category,))
             total_count = cursor.fetchone()[0]
 
             # 필터링된 데이터 출력
@@ -240,7 +240,7 @@ class RestaurantFilter:
             # 운영시간 필터링된 식당 ID 기준으로 태그 데이터 가져오기
             cursor.execute("""
                 SELECT id, facilities, parking, very_good, seat_info 
-                FROM reviews 
+                FROM final 
                 WHERE id IN %s
             """, (tuple(filtered_restaurant_ids),))
             results = cursor.fetchall()
