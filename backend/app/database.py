@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv() # .env 파일 로딩
 
 # 환경 변수에서 DATABASE_URL 가져오기
-DB_URL = os.getenv("DATABASE_URL")
+DB_URL = os.getenv("POSTGRES_CONN_STR")
 print("db url partly: ", DB_URL[:5]) # debugging(지우기)
 
 def get_db_connection():
