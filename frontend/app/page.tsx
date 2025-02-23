@@ -44,31 +44,32 @@ const Home = () => {
         }),
       });
 
-      // 응답을 텍스트로 먼저 확인
-      const text = await response.text();
-      console.log('Response text:', text);
+      // ✅ 기존 검색 기록 불러오기
+      const previousHistory = JSON.parse(localStorage.getItem("searchHistory") || "[]");
 
-      // 만약 응답이 JSON이라면, 그 후에 JSON으로 변환
-      const data = JSON.parse(text); // JSON으로 변환
-      console.log(data);
+      // ✅ 새 검색 기록 추가 (결과 없이 query만 저장)
+      const newEntry = { keyword: query, results: [] };
+      const updatedHistory = [newEntry, ...previousHistory].slice(0, 10); // 최근 10개 기록 유지
+
+      // ✅ 검색 기록을 로컬 스토리지에 저장
+      localStorage.setItem("searchHistory", JSON.stringify(updatedHistory));
+
+  
+      router.push('/recommendations'); // Navigate to recommendations page      
 
 
     } catch (error) {
       console.error('Error sending query:', error);
     }
-    // **클라이언트 사이드에서만** router.push() 실행
-    // if (typeof window !== 'undefined') { // 클라이언트에서만 실행되도록 조건 추가
-    //   console.log('Move to recommendations page');
-    //   router.push('/recommendations'); // 검색 후 추천 페이지로 이동
-    // }
-    router.push('/recommendations'); // 검색 후 추천 페이지로 이동
+
+
   };
 
   return (
     <div className="w-screen h-screen flex flex-col items-center justify-between bg-white px-6 py-10">
       {/* 상단 텍스트 */}
       <div className="text-center">
-        <h1 className="text-[#F8522A] font-['IBM_Plex_Sans_KR'] text-[48px] font-bold leading-normal tracking-[1.8px]">
+        <h1 className="text-[#F8522A] font-ibm text-[48px] font-bold leading-normal tracking-[1.8px]">
           머무거
         </h1>
         <p className="text-orange-500 mt-2">{displayHeader}</p> {/* 타이핑 효과 적용 */}
@@ -76,7 +77,7 @@ const Home = () => {
 
       {/* ✅ 카테고리 선택 박스 (체크박스 포함) */}
       <div className="w-[350px] h-[250px] bg-white border-[2.5px] border-black/25 rounded-[20px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] p-[20px] flex flex-col items-center">
-        <h2 className="text-[#F3623F] font-['IBM_Plex_Sans_KR'] text-[25px] font-semibold tracking-[0.5px] text-center">
+        <h2 className="text-[#F3623F] font-ibm text-[25px] font-semibold tracking-[0.8px] text-center">
           카테고리
         </h2>
 
