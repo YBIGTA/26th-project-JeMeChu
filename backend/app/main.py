@@ -4,9 +4,9 @@ from restaurant_filter import RestaurantFilter
 from rag import RAGEngine
 import json
 
+from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 
-# 모듈 객체 초기화
 restaurant_filter = RestaurantFilter()
 rag_engine = RAGEngine()
 
