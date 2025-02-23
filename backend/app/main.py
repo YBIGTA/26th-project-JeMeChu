@@ -3,7 +3,26 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from restaurant_filter import RestaurantFilter
 
+from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
+
+# 🔹 CORS 설정 추가
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 👈 모든 도메인에서 접근 가능 (보안 고려 필요)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+# ✅ 요청 데이터 모델 정의
+class TestRequest(BaseModel):
+    message: str
+
+# ✅ FastAPI 테스트 엔드포인트
+@app.post("/test")
+async def test_endpoint(request: TestRequest):
+    return {"received_message": request.message}
+
 restaurant_filter = RestaurantFilter()
 
 class FilterRequest(BaseModel):
