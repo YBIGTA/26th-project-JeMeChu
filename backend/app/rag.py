@@ -171,8 +171,15 @@ class RAGEngine:
             SELECT id, photo_url, name, phone, business_hours, facilities, parking, very_good, seat_info, menu, connect_url
             FROM realfinal
             WHERE id IN ({','.join(map(str, top3_ids))})
+            ORDER BY CASE id
+                WHEN {top3_ids[0]} THEN 1
+                WHEN {top3_ids[1]} THEN 2
+                WHEN {top3_ids[2]} THEN 3
+                ELSE 4
+            END
             """
             db_details = pd.read_sql(sql_query, self.restaurant_engine)
+            
         else:
             return {"error": "상위 식당 ID가 없습니다."}
         
@@ -190,8 +197,8 @@ class RAGEngine:
         system_message = SystemMessage(
             content=(
                 "너는 JSON 배열 형식으로만 응답하는 AI 어시스턴트이고, 사용자의 쿼리와 리뷰를 비교해서 어떤 점이 유사해서 이 식당을 추천하는지 설명해주는 AI야."
-                "출력은 오직 JSON 배열이어야 하며, 각 객체는 오직 'reason', 'core' 필드만 포함해야해. "
-                "'reason'에서 설명할 때, 리뷰 문장을 그대로 가져와서 보여주며 유사성을 설명해야해."
+                "출력은 오직 JSON 배열이어야 해. **반드시 3개의 객체를 포함하며 내가 제공한 식당 순서대로 나열하자.** 각 객체는 오직 'reason', 'core' 필드만 포함해야해. "
+                "'reason'에서 설명할 때, 리뷰 문장을 가져와서 보여주며 유사성을 설명해야해. "
                 "'core'에는 유사성이 두드러지는 단어를 저장해줘."
                 "실제 만나서 대화하는 것 처럼, 꼭 구어체로 말해주되 존댓말로 말해줘."
             )

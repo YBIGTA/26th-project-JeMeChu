@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { X } from "lucide-react"; // 닫기 버튼 아이콘
 
 interface HistoryEntry {
   keyword: string;

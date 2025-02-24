@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import Sidebar from "../../components/Sidebar"
+import { highlightCore } from "../utils/highlightCore";
+
 //import { parseRestaurantData } from "../utils/parseRestaurantData";
 const RecommendationsPage = () => {
   const [recommendedRestaurants, setRecommendedRestaurants] = useState<any[]>([]);
@@ -52,8 +54,7 @@ const RecommendationsPage = () => {
       setRecommendedRestaurants([]); // ✅ Prevents crash by setting empty array
       return;
     }
-    const parsedResults = selectedEntry.results.map((restaurant: any) => parseRestaurantData(restaurant));
-  
+
     // ✅ Toggle logic: If same keyword is clicked, hide results; otherwise, show them
     if (selectedKeyword === keyword) {
       setSelectedKeyword(""); // Unselect the keyword
@@ -63,13 +64,6 @@ const RecommendationsPage = () => {
       setRecommendedRestaurants(selectedEntry.results);
     }
   
-    // setSelectedKeyword(keyword);
-    //   // ✅ undefined 체크 및 기본값 설정
-    // const parsedResults = Array.isArray(selectedEntry.results) ? selectedEntry.results : [];
-
-    // console.log("Loaded search results:", parsedResults);
-  
-    // setRecommendedRestaurants(parsedResults);
     console.log("Loaded search results:", selectedEntry.results);
     setRecommendedRestaurants(selectedEntry.results);
   };
@@ -109,11 +103,9 @@ const RecommendationsPage = () => {
           📜 history
         </button>
       
-        {/* ✅ Title with Shadow Effect */}
-        <h1 className="text-[32px] font-bold text-black font-ibm leading-normal drop-shadow-[0px_4px_4px_rgba(0,0,0,0.25)] mb-9 tracking-[0.7px]">
-          오늘의 식당{" "}
-          <span className="text-[35px] text-[#FC4A37] drop-shadow-[0px_4px_4px_rgba(0,0,0,0.05)]">TOP 3</span>
-        </h1>
+        <div className="mt-10 mb-12">
+          <img src="https://i.imgur.com/JRHrkHB.png" alt="로고" width={267} height={46.763} />
+        </div>
 
         {loading ? (
           <p className="text-gray-500">로딩 중...</p>
@@ -122,7 +114,7 @@ const RecommendationsPage = () => {
           <div className="flex flex-col w-full max-w-[400px]">
             
             {(recommendedRestaurants || []).map((restaurant, index) => (
-              <div key={index} className="flex flex-col bg-gray-100 rounded-xl shadow-md overflow-hidden mb-6">
+              <div key={index} className="flex flex-col bg-gray-100 rounded-xl shadow-md overflow-hidden mb-10">
                 {/* ✅ Restaurant Image */}
                 <img
                   src={
@@ -155,7 +147,9 @@ const RecommendationsPage = () => {
                   </div>
 
                   {/* ✅ Reason */}
-                  <p className="text-[16px] font-normal text-black mt-2">{restaurant.reason}</p>
+                  <p className="text-[16px] font-normal text-black mt-2">
+                    {highlightCore(restaurant.reason, restaurant.core)}
+                  </p>
 
                   {/* ✅ Menu (First Item) */}
                   {restaurant.menu?.length > 0 && (
