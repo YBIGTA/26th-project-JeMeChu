@@ -130,7 +130,7 @@ const RecommendationsPage = () => {
                   {/* ✅ Rank Number + Restaurant Name + Distance */}
                   <div className="flex items-end">
                     <h2
-                      className="text-[20px] font-bold text-[#FC4A37] font-ibm tracking-[0.6px] cursor-pointer"
+                      className="text-[20px] font-bold text-[#FC4A37] font-gmarket cursor-pointer"
                       onClick={() => openPopup(restaurant)}
                     >
                       <span className="mr-2">{index + 1}.</span> {restaurant.name}
@@ -139,7 +139,7 @@ const RecommendationsPage = () => {
                     {/* ✅ Distance (Aligned to Bottom) */}
                     {restaurant.distance && (
                       <div className="ml-2 pb-[2px]">
-                        <p className="text-[14px] font-normal text-[#6F6F6F] font-ibm tracking-[0.5px]">
+                        <p className="text-[14px] font-normal text-[#6F6F6F] font-gmarket ">
                           {restaurant.distance}
                         </p>
                       </div>
@@ -147,15 +147,15 @@ const RecommendationsPage = () => {
                   </div>
 
                   {/* ✅ Reason */}
-                  <p className="text-[16px] font-normal text-black mt-2">
+                  <p className="text-[16px] font-light text-black mt-2">
                     {highlightCore(restaurant.reason, restaurant.core)}
                   </p>
 
                   {/* ✅ Menu (First Item) */}
                   {restaurant.menu?.length > 0 && (
-                    <p className="text-black font-bold mt-2 flex items-center">
+                    <p className="text-black font-normal mt-2 flex items-center">
                       🍽️ <span className="ml-1">메뉴:</span>
-                      <span className="font-normal ml-1">
+                      <span className="font-light ml-1">
                         {restaurant.menu[0]?.[0]}
                         {restaurant.menu[0]?.[1] != 0 && (
                           <> ({restaurant.menu[0][1].toLocaleString()}원)</>
@@ -189,7 +189,7 @@ const RecommendationsPage = () => {
             </button>
 
           {/* ✅ Restaurant Name (Centered) */}
-          <h2 className="text-[26px] font-bold text-[#FC4A37] font-ibm text-center mb-4">
+          <h2 className="text-[26px] font-bold text-[#FC4A37] font-gmarket text-center mb-4">
             {selectedRestaurant.name}
           </h2>
 
