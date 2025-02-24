@@ -123,7 +123,7 @@ const Home = () => {
             <button
               key={ctgy}
               onClick={() => handleCategoryClick(ctgy)}
-              className={`w-[76px] h-[42px] flex items-center justify-center border border-[#6F6F6F] rounded-full font-gmarket text-[18px] font-medium leading-normal transition-all 
+              className={`w-[76px] h-[42px] flex items-center justify-center border border-[#6F6F6F] rounded-full font-gmarket text-[17.5px] font-medium leading-normal transition-all 
               ${
                 selectedOption === ctgy
                   ? "bg-[#FF6C29] text-white" // Pressed 상태
@@ -141,7 +141,7 @@ const Home = () => {
         <div className="flex items-center gap-[8.7px] mt-[20px]">
           {/* 체크박스 */}
           <div 
-            className={`w-[20px] h-[20px] flex items-center justify-center rounded-sm border-[1px] border-[#FF6C29] cursor-pointer
+            className={`w-[20px] h-[20px] flex items-center justify-center rounded-sm border-[1px] border-[#6F6F6F] cursor-pointer
               ${selectedOption == "아무거나" ? "bg-[#FF6C29]" : "bg-white"}`} 
             onClick={handleCheckboxClick} // 체크박스 클릭 시 상태 변경
           >
