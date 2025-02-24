@@ -1,28 +1,49 @@
 import React, { useState } from "react";
+import { X } from "lucide-react"; // 닫기 버튼 아이콘
 
-const Sidebar = ({ isOpen, onClose, searchHistory }) => {
-  const [openKeyword, setOpenKeyword] = useState(null); // ✅ 현재 열려 있는 검색 기록
+interface HistoryEntry {
+  keyword: string;
+  results: any[];
+}
 
-  const toggleKeyword = (keyword) => {
-    setOpenKeyword(openKeyword === keyword ? null : keyword);
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+  searchHistory: HistoryEntry[];
+  onRestaurantClick: (restaurant: any) => void;
+  onSelectKeyword?: (keyword: string) => void;
+  selectedKeyword?: string | null;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({
+  isOpen,
+  onClose,
+  searchHistory,
+  onRestaurantClick,
+  onSelectKeyword,
+  selectedKeyword,
+}) => {
+  const [openKeyword, setOpenKeyword] = useState<string | null>(null);
+
+  const toggleKeyword = (keyword: string) => {
+    const newOpen = openKeyword === keyword ? null : keyword;
+    setOpenKeyword(newOpen);
+    // 선택한 검색어가 바뀌면 부모의 onSelectKeyword 호출 (있다면)
+    if (onSelectKeyword) {
+      onSelectKeyword(keyword);
+    }
   };
 
   if (!isOpen) return null;
-  // ✅ 네이버 지도 이동 함수 (현재는 console.log로 대체)
-  const handleRestaurantClick = (restaurantName) => {
-    const naverMapURL = `https://map.naver.com/?query=${restaurantName}`; // 추후 변경 가능
-    console.log(`Navigating to: ${naverMapURL}`);
-    // window.open(naverMapURL, "_blank");  // 🚀 네이버 맵 연결되면 이 코드 활성화
-  };
 
   return (
-    <div className="fixed inset-0 flex z-[9999]"> {/* ✅ 최상위 z-index 설정 */}
+    <div className="fixed inset-0 flex z-[9999]">
       <div className="fixed inset-0 bg-black opacity-30" onClick={onClose}></div>
-
       <div className="fixed left-0 top-0 h-full w-80 bg-white p-6 shadow-lg transition-transform duration-300 ease-in-out z-[10000]">
-        <button className="absolute top-4 right-4 text-gray-600 text-xl" onClick={onClose}>✖</button>
+        <button className="absolute top-4 right-4 text-gray-600 text-xl" onClick={onClose}>
+          ✖
+        </button>
         <h2 className="text-xl font-bold mb-4">🔍 검색 기록</h2>
-
         {searchHistory.length === 0 ? (
           <p className="text-gray-500 text-sm mb-4">검색 기록이 없습니다.</p>
         ) : (
@@ -35,15 +56,14 @@ const Sidebar = ({ isOpen, onClose, searchHistory }) => {
                 >
                   {entry.keyword}
                 </button>
-
-                {/* ✅ 검색어 클릭 시 해당 검색 당시 추천 식당 표시 */}
+                {/* 해당 검색어 클릭 시 추천 식당 목록 표시 */}
                 {openKeyword === entry.keyword && (
                   <div className="mt-2 border-t border-gray-300 pt-2">
                     {entry.results.map((restaurant, idx) => (
                       <button
                         key={idx}
                         className="w-full text-left text-blue-600 hover:underline px-2 py-1 transition"
-                        onClick={() => handleRestaurantClick(restaurant.name)}
+                        onClick={() => onRestaurantClick(restaurant)}
                       >
                         {restaurant.name}
                       </button>

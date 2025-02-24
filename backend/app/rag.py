@@ -1,45 +1,38 @@
+# rag.py
 import os
 import json
-import numpy as np
 from collections import defaultdict
 from dotenv import load_dotenv
 import openai
 import time
 import pandas as pd
-import ast
-import math
-import geocoder
-import requests
-from distance_utils import get_current_location, calculate_distance
+from app.database import engine
 
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.chat_models import ChatOpenAI
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from pinecone import Pinecone
-from sqlalchemy import create_engine
 from langchain.schema import SystemMessage, HumanMessage
 
-# .env 파일 로드 및 OpenAI API Key 설정
+from app.distance_utils import get_current_location, calculate_distance
+from app.database import SessionLocal, RealFinal  # <--- ensure this is correct
+from fastapi.responses import JSONResponse
+
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class RAGEngine:
     def __init__(self):
         self.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
         self.PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
         self.INDEX_NAME = "vectorspace"
-        self.POSTGRES_CONN_STR = os.getenv("POSTGRES_CONN_STR")
+        self.POSTGRES_CONN_STR = os.getenv("DB_URL")
         self.KAKAO_API_KEY = os.getenv("KAKAO_API_KEY")
 
-        # Pinecone 클라이언트 초기화 및 인덱스 연결
         pc = Pinecone(api_key=self.PINECONE_API_KEY)
         self.index = pc.Index(self.INDEX_NAME)
-        
-        # DB 연결 (SQLAlchemy)
-        self.restaurant_engine = create_engine(self.POSTGRES_CONN_STR)
-        
-        print("RAGEngine 초기화: Pinecone과 DB에 정상적으로 연결되었습니다.")
-    
+        self.restaurant_engine = engine
+        print("RAGEngine 초기화 완료")
+
     def get_embedding(self, text):
         """텍스트 하나에 대한 임베딩을 생성합니다."""
         try:
@@ -54,34 +47,36 @@ class RAGEngine:
             print(f"❌ 텍스트 임베딩 생성 오류: {e}")
             time.sleep(5)
             return None
-    
+
     def reorder_business_hours(self, business_hours_str):
         """사업시간 문자열을 요일 순서대로 재정렬합니다."""
         day_order = {"월": 1, "화": 2, "수": 3, "목": 4, "금": 5, "토": 6, "일": 7}
         entries = [entry.strip() for entry in business_hours_str.split(";") if entry.strip()]
         sorted_entries = sorted(entries, key=lambda entry: day_order.get(entry.split(":")[0].strip(), 100))
         return "; ".join(sorted_entries)
-    
+
     def transform_row(self, row):
-        """DB에서 가져온 행의 business_hours를 재정렬하고 필요한 필드를 반환합니다."""
-        if isinstance(row["business_hours"], str):
-            bh = self.reorder_business_hours(row["business_hours"])
+        if isinstance(row.business_hours, str):
+            bh = self.reorder_business_hours(row.business_hours)
         else:
-            bh = row["business_hours"]
+            bh = row.business_hours
+        
+        name = str(row.name) if not isinstance(row.name, str) else row.name
+
         return {
-            "id": row["id"],
-            "name": row["name"],
-            "photo_url": row["photo_url"],
-            "phone": row["phone"],
+            "id": row.id,
+            "name": name,
+            "photo_url": row.photo_url,
+            "phone": row.phone,
             "business_hours": bh,
-            "facilities": row["facilities"],
-            "parking": row["parking"],
-            "very_good": row["very_good"],
-            "seat_info": row["seat_info"],
-            "menu": row["menu"],
-            "connect_url": row["connect_url"]
+            "facilities": row.facilities,
+            "parking": row.parking,
+            "very_good": row.very_good,
+            "seat_info": row.seat_info,
+            "menu": row.menu,
+            "connect_url": row.connect_url
         }
-    
+
     def run(self, query, allowed_ids):
         """
         1. 사용자 쿼리에 대한 임베딩을 생성하고,
@@ -176,7 +171,6 @@ class RAGEngine:
             return {"error": "상위 식당 ID가 없습니다."}
         
         basic_info_list = [self.transform_row(row) for _, row in db_details.iterrows()]
-        
         # 사용자의 현재 위치를 구하고 각 식당과의 거리를 계산
         user_lat, user_lon = get_current_location()
         for info in basic_info_list:
@@ -227,7 +221,5 @@ class RAGEngine:
             except (IndexError, KeyError):
                 info["reason"] = ""
                 info["core"] = ""
-        
-        final_json_output = json.dumps(basic_info_list, ensure_ascii=False, indent=2)
-        print(final_json_output)
-        return final_json_output
+        print(basic_info_list)
+        return JSONResponse(content=basic_info_list)

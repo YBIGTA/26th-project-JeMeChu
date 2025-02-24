@@ -1,51 +1,48 @@
-## db랑 연결하는 파일
-import psycopg2 # pip install psycopg2-binary
-from psycopg2.extras import DictCursor
-import json
+# database.py
 import os
+from sqlalchemy import create_engine, Column, Integer, String, Text
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 
-load_dotenv() # .env 파일 로딩
+load_dotenv()
 
-# 환경 변수에서 DATABASE_URL 가져오기
-DB_URL = os.getenv("POSTGRES_CONN_STR")
-print("db url partly: ", DB_URL[:5]) # debugging(지우기)
+DB_URL = os.getenv("DB_URL")
+engine = create_engine(DB_URL, echo=False)
+Base = declarative_base()
 
-def get_db_connection():
-    """
-    PostgreSQL DB 연결을 생성하는 함수
-    """
-    try:
-        conn = psycopg2.connect(DB_URL, cursor_factory=DictCursor)  # DictCursor 사용하여 결과를 딕셔너리처럼 다룸
-        return conn
-    except Exception as e:
-        print("!!DB 연결 실패:", e)
-        return None
+class RealFinal(Base):
+    __tablename__ = "realfinal"
 
-# debugging(아래 함수 지우기)
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=True)
+    # Add category if you need category-based filtering:
+    category = Column(String, nullable=True)
+
+    business_hours = Column(Text, nullable=True)
+    facilities = Column(Text, nullable=True)
+    parking = Column(Text, nullable=True)
+    very_good = Column(Text, nullable=True)
+    seat_info = Column(Text, nullable=True)
+    menu = Column(Text, nullable=True)
+
+    # Additional columns from 'realfinal' or 'final':
+    photo_url = Column(Text, nullable=True)
+    phone = Column(String, nullable=True)
+    connect_url = Column(Text, nullable=True)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Optional: create tables if missing
+# Base.metadata.create_all(bind=engine)
+
 if __name__ == "__main__":
-    conn = get_db_connection()
-
-    if conn: 
-        print("db 연결 굿")
-        cursor = conn.cursor()
-
-        try:
-            cursor.execute("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name = 'final';
-            """)
-            columns = cursor.fetchall()
-
-            print("final 테이블의 컬럼명:")
-            for col in columns:
-                print("-", col[0])  # 컬럼명 출력
-
-        except Exception as e:
-            print("컬럼 조회 실패:", e)
-        finally:
-            cursor.close()
-            conn.close()
-    else:
-        print("db 연결 실패..")
+    try:
+        session = SessionLocal()
+        # quick test
+        count = session.query(RealFinal).count()
+        print(f"'realfinal' table row count: {count}")
+    except Exception as e:
+        print("DB connection test failed:", e)
+    finally:
+        session.close()
