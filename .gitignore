@@ -8,3 +8,4 @@ embedding/embedded_data_check.csv
 embedding/embedded_data_temp.csv
 server/embedded_data.csv
 venv/
+__pycache__/

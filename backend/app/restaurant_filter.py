@@ -135,8 +135,22 @@ class RestaurantFilter:
                     {"role": "user", "content": details_input},
                 ]
             )
-            expanded_query = json.loads(response.choices[0].message.content)
+            
+            content = response.choices[0].message.content.strip()
+            print("1차 필터링 expanded_query 원본:", content)  # 디버깅
+
+            # `json` 코드 블록이 포함된 경우 제거
+            json_match = re.search(r"```json\s*(\{.*\})\s*```", content, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(1).strip()
+            else:
+                json_str = content  # 만약 코드 블록이 없으면 원본 사용
+
+            # JSON 디코딩 (예외 처리 포함)
+            expanded_query = json.loads(json_str)
+            
             return expanded_query
+        
         except Exception as e:
             print("OpenAI API 요청 실패:", e)
             return {}
@@ -187,11 +201,14 @@ class RestaurantFilter:
             if not matched_restaurants:
                 # If no matches, just return everything from the prior stage
                 return filtered_restaurant_ids
+            
+            print("1차 restaurants_filter 완료~\nID:", matched_restaurants, "\n")
 
             return matched_restaurants
 
         except Exception as e:
             print("DB 조회 오류:", e)
             return []
+        
         finally:
             session.close()

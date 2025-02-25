@@ -1,21 +1,20 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import Sidebar from "../../components/Sidebar"
 import { highlightCore } from "../utils/highlightCore";
+import { Restaurant } from "../utils/types";
+import { Menu } from "lucide-react";
+
 
 //import { parseRestaurantData } from "../utils/parseRestaurantData";
 const RecommendationsPage = () => {
-  const [recommendedRestaurants, setRecommendedRestaurants] = useState<any[]>([]);
+  const [recommendedRestaurants, setRecommendedRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedRestaurant, setSelectedRestaurant] = useState<any>(null); // 🔥 Selected restaurant for popup
-  const [searchHistory, setSearchHistory] = useState<any[]>([]);
-  const router = useRouter();
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const [searchHistory, setSearchHistory] = useState<{ keyword: string; results: Restaurant[] }[]>([]);
   const [selectedKeyword, setSelectedKeyword] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
-
-  const API_URL = process.env.NEXT_PUBLIC_API; // 환경 변수에서 API 주소 가져오기
 
   useEffect(() => {
     // 🔥 검색 기록을 로컬스토리지에서 불러오기
@@ -34,7 +33,7 @@ const RecommendationsPage = () => {
 
 
   // 🔥 Open Popup Function
-  const openPopup = (restaurant: any) => {
+  const openPopup = (restaurant: Restaurant) => {
     setSelectedRestaurant(restaurant);
   };
 
@@ -46,7 +45,10 @@ const RecommendationsPage = () => {
   const handleSelectKeyword = (keyword: string) => {
     console.log("Clicked keyword:", keyword);
   
-    const selectedEntry = searchHistory.find((entry) => entry.keyword === keyword);
+    const selectedEntry = searchHistory.find(
+      (entry) => entry.keyword === keyword
+    ) as { keyword: string; results: Restaurant[] } | undefined;    
+    
     console.log("Selected Entry:", selectedEntry);
 
     if (!selectedEntry || !Array.isArray(selectedEntry.results) || selectedEntry.results.length !== 3) {
@@ -68,31 +70,29 @@ const RecommendationsPage = () => {
     setRecommendedRestaurants(selectedEntry.results);
   };
   
-  const handleRestaurantClick = (restaurant: any) => {
-    if (restaurant.connect_url && typeof restaurant.connect_url === "string" && restaurant.connect_url.trim()) {
+  const handleRestaurantClick = (restaurant: Restaurant) => {
+    if (restaurant.connect_url?.trim()) {
       window.open(restaurant.connect_url, "_blank");
     } else {
       console.warn("해당 식당의 URL 정보가 없습니다:", restaurant.name);
     }
   };
-  
+    
 
   
   return (
-    <div className="relative w-screen h-screen flex bg-white">
+    <div className="w-screen h-screen flex bg-white">
       {/* ✅ Sidebar - 검색 기록 */}
-      <div className="absolute z-[9999]">
-        {sidebarOpen && (
-          <Sidebar 
-            isOpen={sidebarOpen} 
-            onClose={() => setSidebarOpen(false)} // ✅ ❌ 버튼 클릭 시 닫힘
-            onSelectKeyword={handleSelectKeyword} 
-            onRestaurantClick={handleRestaurantClick}
-            searchHistory={searchHistory} 
-            selectedKeyword={selectedKeyword}
-          />
-        )}
-      </div>
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)} // ✅ ❌ 버튼 클릭 시 닫힘
+        onSelectKeyword={handleSelectKeyword} 
+        onRestaurantClick={handleRestaurantClick}
+        searchHistory={searchHistory} 
+        selectedKeyword={selectedKeyword}
+      />
+
+
     
       <div className="w-screen h-screen flex flex-col items-center bg-white px-6 py-10 overflow-y-auto">
         {/* ✅ Sidebar Button (Top Left) */}
@@ -100,7 +100,7 @@ const RecommendationsPage = () => {
             className="absolute left-6 top-6 bg-gray-200 p-2 rounded-full shadow-md hover:bg-gray-300 transition"
             onClick={() => setSidebarOpen(!sidebarOpen)} // ✅ Sidebar 열고 닫기
         >
-          📜 history
+          <Menu size={24} strokeWidth={2} className="text-gray-600" />
         </button>
       
         <div className="mt-10 mb-12">
@@ -111,67 +111,83 @@ const RecommendationsPage = () => {
           <p className="text-gray-500">로딩 중...</p>
         ) : recommendedRestaurants.length > 0 ? (
           // {/* ✅ Restaurant List */}
-          <div className="flex flex-col w-full max-w-[400px]">
+          <div className="w-[340px] flex-col">
             
-            {(recommendedRestaurants || []).map((restaurant, index) => (
-              <div key={index} className="flex flex-col bg-gray-100 rounded-xl shadow-md overflow-hidden mb-10">
-                {/* ✅ Restaurant Image */}
-                <img
-                  src={
-                    restaurant.photo_url && restaurant.photo_url[0] && Array.isArray(restaurant.photo_url)
-                      ? restaurant.photo_url[0]
-                      : "https://i.imgur.com/zAzV9Db.png"
+            {(recommendedRestaurants || []).map((restaurant, index) => {
+                // 🔥 카드 클릭 시 팝업을 여는 함수 (이미지 클릭 제외)
+                const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+                  // 이미지 클릭일 경우, 이벤트를 차단해서 팝업 안 뜨게 함
+                  if ((e.target as HTMLElement).tagName === "IMG") {
+                    e.stopPropagation();
+                    return;
                   }
-                  alt={restaurant.name}
-                  className="w-full h-[200px] object-cover"
-                />
-                {/* ✅ Content Box (Text) */}
-                <div className="p-4">
-                  {/* ✅ Rank Number + Restaurant Name + Distance */}
-                  <div className="flex items-end">
-                    <h2
-                      className="text-[20px] font-bold text-[#FC4A37] font-ibm tracking-[0.6px] cursor-pointer"
-                      onClick={() => openPopup(restaurant)}
-                    >
-                      <span className="mr-2">{index + 1}.</span> {restaurant.name}
-                    </h2>
+                  openPopup(restaurant);
+                };
 
-                    {/* ✅ Distance (Aligned to Bottom) */}
-                    {restaurant.distance && (
-                      <div className="ml-2 pb-[2px]">
-                        <p className="text-[14px] font-normal text-[#6F6F6F] font-ibm tracking-[0.5px]">
-                          {restaurant.distance}
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                return (
+    
+                  <div
+                    key={index}
+                    className="flex flex-col bg-gray-100 rounded-xl shadow-md overflow-hidden mb-10 cursor-pointer"
+                    onClick={handleCardClick}
+                  >
+                    {/* ✅ Restaurant Image */}
+                    <img
+                      src={
+                        restaurant.photo_url && restaurant.photo_url[0] && Array.isArray(restaurant.photo_url)
+                          ? restaurant.photo_url[0]
+                          : "https://i.imgur.com/zAzV9Db.png"
+                      }
+                      alt={restaurant.name}
+                      className="w-full h-[200px] object-cover cursor-default"
+                      onClick={(e) => e.stopPropagation()} // 이미지 클릭 시 팝업 열리지 않도록 이벤트 전파 차단
+                    />
+                    {/* ✅ Content Box (Text) */}
+                    <div className="p-4">
+                      {/* ✅ Rank Number + Restaurant Name + Distance */}
+                      <div className="flex items-end">
+                        <h2
+                          className="text-[23px] font-bold text-[#FC4A37] font-gmarket cursor-pointer"
+                          onClick={() => openPopup(restaurant)}
+                        >
+                          <span className="mr-2">{index + 1}.</span> {restaurant.name}
+                        </h2>
 
-                  {/* ✅ Reason */}
-                  <p className="text-[16px] font-normal text-black mt-2">
-                    {highlightCore(restaurant.reason, restaurant.core)}
-                  </p>
-
-                  {/* ✅ Menu (First Item) */}
-                  {restaurant.menu?.length > 0 && (
-                    <p className="text-black font-bold mt-2 flex items-center">
-                      🍽️ <span className="ml-1">메뉴:</span>
-                      <span className="font-normal ml-1">
-                        {restaurant.menu[0]?.[0]}
-                        {restaurant.menu[0]?.[1] != 0 && (
-                          <> ({restaurant.menu[0][1].toLocaleString()}원)</>
+                        {/* ✅ Distance (Aligned to Bottom) */}
+                        {restaurant.distance && (
+                          <div className="ml-2 pb-[2px]">
+                            <p className="text-[14px] font-normal text-[#6F6F6F] font-gmarket ">
+                              {restaurant.distance}
+                            </p>
+                          </div>
                         )}
-                      </span>
-                    </p>
-                  )}
-                </div>
-              </div>
+                      </div>
+                      {/* ✅ Menu (First Item) */}
+                      {restaurant.menu?.length > 0 && (
+                        <p className="text-black font-normal mt-2 flex items-center">
+                          🍽️ <span className="ml-1">메뉴:</span>
+                          <span className="font-medium font-opacity-70 ml-1">
+                            {restaurant.menu[0]?.[0]}
+                            {restaurant.menu[0]?.[1] != 0 && (
+                              <> ({restaurant.menu[0][1].toLocaleString()}원)</>
+                            )}
+                          </span>
+                        </p>
+                      )}
 
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500">검색 결과가 없습니다.</p>
-        )}
-      </div>
+                      {/* ✅ Reason */}
+                      <p className="text-[16px] font-medium text-black text-opacity-65 mt-2 leading-relaxed">
+                        {highlightCore(restaurant.reason ?? "", restaurant.core ?? "")}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-500">검색 결과가 없습니다.</p>
+          )}
+        </div>
 
 
 
@@ -189,13 +205,13 @@ const RecommendationsPage = () => {
             </button>
 
           {/* ✅ Restaurant Name (Centered) */}
-          <h2 className="text-[26px] font-bold text-[#FC4A37] font-ibm text-center mb-4">
+          <h2 className="text-[26px] font-bold text-[#FC4A37] font-gmarket text-center mb-4">
             {selectedRestaurant.name}
           </h2>
 
           {/* ✅ Multiple Images in Popup */}
           <div className="flex gap-2 overflow-x-auto">
-            {selectedRestaurant.photo_url?.map((img: string, idx: number) => (
+          {(Array.isArray(selectedRestaurant.photo_url) ? selectedRestaurant.photo_url : [selectedRestaurant.photo_url])?.map((img: string, idx: number) => (
               <img
                 key={idx}
                 src={img}
@@ -209,43 +225,87 @@ const RecommendationsPage = () => {
           <p className="text-[16px] font-normal text-black text-center mt-2 mb-4">
             {selectedRestaurant.reason}
           </p>
-                
-          {/* ✅ Full Menu (Show up to 3 items) */}
-          {selectedRestaurant?.menu?.length > 0 && (
-            <p className="text-gray-600 text-sm mb-2">
-              🍽️ <b>메뉴:</b>{" "}
-              {selectedRestaurant.menu
-                .slice(0, 5) // 🔥 Show only the first 3 menu items
-                .map((item: any) => 
-                  item[1] != 0 
-                    ? `${item[0]} (${item[1].toLocaleString()}원)` 
-                    : `${item[0]}`
-                )
-                .join(", ")}
-            </p>
-          )}
+            
+
+          {/* ✅ 메뉴 & 영업시간을 반반 정렬 */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* ✅ 메뉴 */}
+            <div>
+              {selectedRestaurant.menu && (
+                <div className="text-gray-600 text-sm">
+                  <p className="font-bold flex items-center gap-1">
+                    🍽️ 메뉴:
+                  </p>
+                  <div className="mt-1 pl-4 border-l-2 border-gray-300">
+                  {(Array.isArray(selectedRestaurant.menu) ? selectedRestaurant.menu : []).slice(0, 8).map((item: [string, number], index: number) => (
+                      <p key={index}>
+                        <span className="font-medium">{item[0]}</span>
+                        {item[1] !== 0 && ` (${item[1].toLocaleString()}원)`}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ✅ 영업시간 */}
+            <div>
+              {selectedRestaurant.business_hours && (
+                <div className="text-gray-600 text-sm">
+                  <p className="font-bold flex items-center gap-1">
+                    ⏰ 영업시간:
+                  </p>
+                  <div className="mt-1 pl-4 border-l-2 border-gray-300">
+                    {selectedRestaurant.business_hours !== "정보 없음"
+                      ? selectedRestaurant.business_hours.split("; ").map((hour, index) => {
+                          const [day, time] = hour.split(": ");
+                          return (
+                            <p key={index} className="mb-1">
+                              <span className="font-bold">{day}</span>: {time}
+                            </p>
+                          );
+                        })
+                      : "정보 없음"}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
 
-          {/* ✅ Business Hours */}
-          {selectedRestaurant.business_hours && (
-            <p className="text-gray-600 text-sm mb-2">
-              ⏰ <b>영업시간:</b> {selectedRestaurant.business_hours}
+          {/* ✅ 기타 정보 (시설, 주차, 전화번호) */}
+          <div className="mt-4 space-y-2 text-gray-600 text-sm">
+            {/* ✅ 시설 */}
+            <p>
+              🏢 <b>시설: </b> 
+              {Array.isArray(selectedRestaurant.facilities) ? selectedRestaurant.facilities.join(", ") : "정보 없음"}
             </p>
-          )}
+              
+            {/* ✅ 전화번호 */}
+            <p>
+              📞 <b>전화: </b> 
+              {selectedRestaurant.phone 
+                ? selectedRestaurant.phone 
+                : "정보 없음"}
+            </p>
+              
 
-          {/* ✅ Facilities */}
-          {selectedRestaurant.facilities.length > 0 && (
-            <p className="text-gray-600 text-sm mb-2">
-              🏢 <b>시설:</b> {selectedRestaurant.facilities.join(", ")}
-            </p>
-          )}
+            {/* ✅ 주차 정보 */}
+            {selectedRestaurant.parking !== undefined && selectedRestaurant.parking !== null && (
+              <p className="text-gray-600 text-sm">
+                🚗 <b>주차:</b> {!selectedRestaurant.parking || selectedRestaurant.parking.trim() === "NaN" ? "정보 없음" : selectedRestaurant.parking}
+              </p>
+            )}
 
-          {/* ✅ Parking Info */}
-          {selectedRestaurant.parking && (
-            <p className="text-gray-600 text-sm">
-              🚗 <b>주차:</b> {selectedRestaurant.parking}
+            {/* ✅ 좌석 정보 */}
+            <p>
+              💺 <b>좌석 정보: </b> 
+              {Array.isArray(selectedRestaurant.seat_info) ? selectedRestaurant.seat_info.join(", ") : "정보 없음"}
             </p>
-          )}
+
+
+          </div>
+
           </div>
         </div>
       )}

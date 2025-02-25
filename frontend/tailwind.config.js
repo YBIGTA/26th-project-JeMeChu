@@ -7,6 +7,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
+        gmarket: ["GmarketSans", "sans-serif"],
         ibm: ["IBM Plex Sans KR", "sans-serif"],
       },
     },

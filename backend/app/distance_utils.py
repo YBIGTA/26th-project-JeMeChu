@@ -5,6 +5,12 @@ import requests
 import psycopg2
 import os
 
+try:
+    import gps
+    GPS_ENABLED = True
+except ImportError:
+    GPS_ENABLED = False
+
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371  # 지구 반지름 (km)
     dlat = math.radians(lat2 - lat1)
@@ -13,15 +19,25 @@ def haversine(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
 
-def get_ip_location():
-    g = geocoder.ip("me")
-    if g.ok:
-        return g.latlng[0], g.latlng[1]
-    return None, None
+def get_gps_location():
+    # GPS 기능이 활성화되어 있으면 위치를 시도하고, 있지 않거나 실패하면 None, None을 반환합니다.
+    if not GPS_ENABLED:
+        return None, None
+    try:
+        session = gps.gps(mode=gps.WATCH_ENABLE)
+        report = session.next()
+        if report.get('class') == 'TPV':
+            return report.lat, report.lon
+    except Exception:
+        return None, None
 
 def get_current_location():
-    # 여기서는 GPS 사용 여부와 상관없이 IP 위치로 단순 구현
-    return get_ip_location()
+    # GPS로 위치를 시도하고, 성공하면 그 좌표를 사용합니다.
+    # 실패하면 고정 좌표 (37.56578, 126.9386)를 반환합니다.
+    lat, lon = get_gps_location()
+    if lat is not None and lon is not None:
+        return lat, lon
+    return (37.56578, 126.9386)
 
 def get_lat_lon_from_kakao(address, kakao_api_key):
     url = "https://dapi.kakao.com/v2/local/search/address.json"

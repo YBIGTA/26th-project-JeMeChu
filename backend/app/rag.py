@@ -44,7 +44,7 @@ class RAGEngine:
             )
             return response.data[0].embedding
         except Exception as e:
-            print(f"❌ 텍스트 임베딩 생성 오류: {e}")
+            print(f"텍스트 임베딩 생성 오류: {e}")
             time.sleep(5)
             return None
 
@@ -61,7 +61,8 @@ class RAGEngine:
         else:
             bh = row.business_hours
         
-        name = str(row.name) if not isinstance(row.name, str) else row.name
+        name = str(row["name"]) if not isinstance(row["name"], str) else row["name"]
+
 
         return {
             "id": row.id,
@@ -148,7 +149,7 @@ class RAGEngine:
             if restaurant_name and restaurant_id and restaurant_name not in restaurant_id_by_name:
                 restaurant_id_by_name[restaurant_name] = restaurant_id
         print("식당 이름 -> id 매핑 결과:")
-        print(restaurant_id_by_name)
+        print(restaurant_id_by_name, "\n")
 
         # top_3 식당의 id 리스트 생성
         top3_ids = []
@@ -157,12 +158,12 @@ class RAGEngine:
                 top3_ids.append(restaurant_id_by_name[restaurant_name])
             else:
                 print(f"Warning: {restaurant_name}에 해당하는 id 값을 찾을 수 없습니다.")
-        print(f"선택된 상위 3개 식당 id 리스트: {top3_ids}")
+        print(f"선택된 상위 3개 식당 id 리스트: {top3_ids}\n")
 
         # DB에서 top3 식당의 상세 정보를 조회 (final 테이블)
         if top3_ids:
             sql_query = f"""
-            SELECT id, photo_url, name, phone, business_hours, facilities, parking, very_good, seat_info, menu, connect_url
+            SELECT id, name, photo_url, phone, business_hours, facilities, parking, very_good, seat_info, menu, connect_url
             FROM realfinal
             WHERE id IN ({','.join(map(str, top3_ids))})
             """
@@ -184,8 +185,9 @@ class RAGEngine:
             content=(
                 "너는 JSON 배열 형식으로만 응답하는 AI 어시스턴트이고, 사용자의 쿼리와 리뷰를 비교해서 어떤 점이 유사해서 이 식당을 추천하는지 설명해주는 AI야."
                 "출력은 오직 JSON 배열이어야 하며, 각 객체는 오직 'reason', 'core' 필드만 포함해야해. "
+                "부정적인 리뷰가 있어도 그 점을 주의하라는 말도 해줘."
                 "'reason'에서 설명할 때, 리뷰 문장을 그대로 가져와서 보여주며 유사성을 설명해야해."
-                "'core'에는 유사성이 두드러지는 단어를 저장해줘."
+                "'core'에는 쿼리와 유사성이 두드러지는 단어를 저장해줘."
                 "실제 만나서 대화하는 것 처럼, 꼭 구어체로 말해주되 존댓말로 말해줘."
             )
         )
@@ -205,14 +207,14 @@ class RAGEngine:
         messages = prompt_value.to_messages()
 
         print("LLM 프롬프트 메시지:")
-        print(messages)
+        print(messages, "\n")
 
         final_reason_output = llm.invoke(messages)
         
         # LLM 응답은 [{"reason": "...", "core": "..."}, ...] 형태로 반환된다고 가정합니다.
         reasons_list = json.loads(final_reason_output.content)
         print("파싱된 추천 사유 리스트:")
-        print(reasons_list)
+        print(reasons_list, "\n")
 
         for i, info in enumerate(basic_info_list):
             try:
@@ -221,5 +223,5 @@ class RAGEngine:
             except (IndexError, KeyError):
                 info["reason"] = ""
                 info["core"] = ""
-        print(basic_info_list)
+        print(f"basic_info_list(거리계산 후): {basic_info_list}\n")
         return JSONResponse(content=basic_info_list)
