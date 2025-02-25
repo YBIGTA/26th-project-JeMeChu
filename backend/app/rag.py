@@ -1,45 +1,38 @@
+# rag.py
 import os
 import json
-import numpy as np
 from collections import defaultdict
 from dotenv import load_dotenv
 import openai
 import time
 import pandas as pd
-import ast
-import math
-import geocoder
-import requests
-from distance_utils import get_current_location, calculate_distance
+from app.database import engine
 
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.chat_models import ChatOpenAI
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from pinecone import Pinecone
-from sqlalchemy import create_engine
 from langchain.schema import SystemMessage, HumanMessage
 
-# .env 파일 로드 및 OpenAI API Key 설정
+from app.distance_utils import get_current_location, calculate_distance
+from app.database import SessionLocal, RealFinal  # <--- ensure this is correct
+from fastapi.responses import JSONResponse
+
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class RAGEngine:
     def __init__(self):
         self.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
         self.PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
         self.INDEX_NAME = "vectorspace"
-        self.POSTGRES_CONN_STR = os.getenv("POSTGRES_CONN_STR")
+        self.POSTGRES_CONN_STR = os.getenv("DB_URL")
         self.KAKAO_API_KEY = os.getenv("KAKAO_API_KEY")
 
-        # Pinecone 클라이언트 초기화 및 인덱스 연결
         pc = Pinecone(api_key=self.PINECONE_API_KEY)
         self.index = pc.Index(self.INDEX_NAME)
-        
-        # DB 연결 (SQLAlchemy)
-        self.restaurant_engine = create_engine(self.POSTGRES_CONN_STR)
-        
-        print("RAGEngine 초기화: Pinecone과 DB에 정상적으로 연결되었습니다.")
-    
+        self.restaurant_engine = engine
+        print("RAGEngine 초기화 완료")
+
     def get_embedding(self, text):
         """텍스트 하나에 대한 임베딩을 생성합니다."""
         try:
@@ -51,37 +44,40 @@ class RAGEngine:
             )
             return response.data[0].embedding
         except Exception as e:
-            print(f"❌ 텍스트 임베딩 생성 오류: {e}")
+            print(f"텍스트 임베딩 생성 오류: {e}")
             time.sleep(5)
             return None
-    
+
     def reorder_business_hours(self, business_hours_str):
         """사업시간 문자열을 요일 순서대로 재정렬합니다."""
         day_order = {"월": 1, "화": 2, "수": 3, "목": 4, "금": 5, "토": 6, "일": 7}
         entries = [entry.strip() for entry in business_hours_str.split(";") if entry.strip()]
         sorted_entries = sorted(entries, key=lambda entry: day_order.get(entry.split(":")[0].strip(), 100))
         return "; ".join(sorted_entries)
-    
+
     def transform_row(self, row):
-        """DB에서 가져온 행의 business_hours를 재정렬하고 필요한 필드를 반환합니다."""
-        if isinstance(row["business_hours"], str):
-            bh = self.reorder_business_hours(row["business_hours"])
+        if isinstance(row.business_hours, str):
+            bh = self.reorder_business_hours(row.business_hours)
         else:
-            bh = row["business_hours"]
+            bh = row.business_hours
+        
+        name = str(row["name"]) if not isinstance(row["name"], str) else row["name"]
+
+
         return {
-            "id": row["id"],
-            "name": row["name"],
-            "photo_url": row["photo_url"],
-            "phone": row["phone"],
+            "id": row.id,
+            "name": name,
+            "photo_url": row.photo_url,
+            "phone": row.phone,
             "business_hours": bh,
-            "facilities": row["facilities"],
-            "parking": row["parking"],
-            "very_good": row["very_good"],
-            "seat_info": row["seat_info"],
-            "menu": row["menu"],
-            "connect_url": row["connect_url"]
+            "facilities": row.facilities,
+            "parking": row.parking,
+            "very_good": row.very_good,
+            "seat_info": row.seat_info,
+            "menu": row.menu,
+            "connect_url": row.connect_url
         }
-    
+
     def run(self, query, allowed_ids):
         """
         1. 사용자 쿼리에 대한 임베딩을 생성하고,
@@ -153,7 +149,7 @@ class RAGEngine:
             if restaurant_name and restaurant_id and restaurant_name not in restaurant_id_by_name:
                 restaurant_id_by_name[restaurant_name] = restaurant_id
         print("식당 이름 -> id 매핑 결과:")
-        print(restaurant_id_by_name)
+        print(restaurant_id_by_name, "\n")
 
         # top_3 식당의 id 리스트 생성
         top3_ids = []
@@ -162,12 +158,12 @@ class RAGEngine:
                 top3_ids.append(restaurant_id_by_name[restaurant_name])
             else:
                 print(f"Warning: {restaurant_name}에 해당하는 id 값을 찾을 수 없습니다.")
-        print(f"선택된 상위 3개 식당 id 리스트: {top3_ids}")
+        print(f"선택된 상위 3개 식당 id 리스트: {top3_ids}\n")
 
         # DB에서 top3 식당의 상세 정보를 조회 (final 테이블)
         if top3_ids:
             sql_query = f"""
-            SELECT id, photo_url, name, phone, business_hours, facilities, parking, very_good, seat_info, menu, connect_url
+            SELECT id, name, photo_url, phone, business_hours, facilities, parking, very_good, seat_info, menu, connect_url
             FROM realfinal
             WHERE id IN ({','.join(map(str, top3_ids))})
             """
@@ -176,7 +172,6 @@ class RAGEngine:
             return {"error": "상위 식당 ID가 없습니다."}
         
         basic_info_list = [self.transform_row(row) for _, row in db_details.iterrows()]
-        
         # 사용자의 현재 위치를 구하고 각 식당과의 거리를 계산
         user_lat, user_lon = get_current_location()
         for info in basic_info_list:
@@ -190,8 +185,9 @@ class RAGEngine:
             content=(
                 "너는 JSON 배열 형식으로만 응답하는 AI 어시스턴트이고, 사용자의 쿼리와 리뷰를 비교해서 어떤 점이 유사해서 이 식당을 추천하는지 설명해주는 AI야."
                 "출력은 오직 JSON 배열이어야 하며, 각 객체는 오직 'reason', 'core' 필드만 포함해야해. "
+                "부정적인 리뷰가 있어도 그 점을 주의하라는 말도 해줘."
                 "'reason'에서 설명할 때, 리뷰 문장을 그대로 가져와서 보여주며 유사성을 설명해야해."
-                "'core'에는 유사성이 두드러지는 단어를 저장해줘."
+                "'core'에는 쿼리와 유사성이 두드러지는 단어를 저장해줘."
                 "실제 만나서 대화하는 것 처럼, 꼭 구어체로 말해주되 존댓말로 말해줘."
             )
         )
@@ -211,14 +207,14 @@ class RAGEngine:
         messages = prompt_value.to_messages()
 
         print("LLM 프롬프트 메시지:")
-        print(messages)
+        print(messages, "\n")
 
         final_reason_output = llm.invoke(messages)
         
         # LLM 응답은 [{"reason": "...", "core": "..."}, ...] 형태로 반환된다고 가정합니다.
         reasons_list = json.loads(final_reason_output.content)
         print("파싱된 추천 사유 리스트:")
-        print(reasons_list)
+        print(reasons_list, "\n")
 
         for i, info in enumerate(basic_info_list):
             try:
@@ -227,7 +223,5 @@ class RAGEngine:
             except (IndexError, KeyError):
                 info["reason"] = ""
                 info["core"] = ""
-        
-        final_json_output = json.dumps(basic_info_list, ensure_ascii=False, indent=2)
-        print(final_json_output)
-        return final_json_output
+        print(f"basic_info_list(거리계산 후): {basic_info_list}\n")
+        return JSONResponse(content=basic_info_list)
