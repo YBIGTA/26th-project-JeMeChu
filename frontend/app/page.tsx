@@ -112,13 +112,13 @@ const Home = () => {
       </div>
 
       {/* ✅ 카테고리 선택 박스 (체크박스 포함) */}
-      <div className="w-[350px] h-[380px] bg-white bg-opacity-90 rounded-[20px] shadow-[0px_2px_2px_rgba(0,0,0,0.15)] p-[20px] flex flex-col items-center">
+      <div className="w-[350px] h-[370px] bg-white bg-opacity-90 rounded-[20px] shadow-[0px_2px_2px_rgba(0,0,0,0.15)] p-[20px] flex flex-col items-center">
         <h2 className="text-[#FF6C29] font-gmarket text-[23px] font-bold text-center mt-4">
           Category
         </h2>
 
         {/* 버튼 리스트 */}
-        <div className="grid grid-cols-3 gap-x-[22px] gap-y-[15px] justify-center mt-[20px]">
+        <div className="grid grid-cols-3 gap-x-[22px] gap-y-[15px] justify-center mt-[20px] mb-[10px]">
           {["한식", "중식", "일식", "양식", "주점", "기타"].map((ctgy) => (
             <button
               key={ctgy}
@@ -137,7 +137,7 @@ const Home = () => {
 
         {/* ✅ 체크박스 & 텍스트 - 카테고리 박스 안에 위치 */}
 
-        <div className="flex items-center gap-[8.7px] mt-[20px]">
+        <div className="flex items-center gap-[8.7px] mt-[15px]">
           {/* 체크박스 */}
           <div 
             className={`w-[20px] h-[20px] flex items-center justify-center rounded-sm border-[1px] border-[#6F6F6F] cursor-pointer
@@ -165,18 +165,18 @@ const Home = () => {
         </div>
 
       {/* 검색창 */}
-      <div className="w-full max-w-[350px] h-[44px] flex items-center border border-[#6F6F6F] bg-[rgba(230,230,230,0.5)] rounded-full px-3 mt-6">
+      <div className="w-full max-w-[350px] h-[44px] flex items-center justify-between border border-[#6F6F6F] bg-[rgba(230,230,230,0.5)] rounded-full pl-3 pr-2 mt-12">
           <input
             ref={inputRef}
             type="text"
             placeholder="ex. 맛있고 주차가 되는 곳 추천해줘"
-            className="flex-1 bg-transparent outline-none text-black text-[15px] placeholder:text-sm placeholder:tracking-[0.5px] px-2 focus:ring-2 focus:ring-[#FF6C29] focus:ring-offset-2 rounded-lg"
+            className="w-[calc(100%-40px)] bg-transparent outline-none text-black text-[15px] placeholder:text-sm placeholder:tracking-[0.5px] pl-1 focus:ring-2 focus:ring-[#FF6C29] focus:ring-offset-2 rounded-lg"
             value={details} 
             onChange={(e) => setDetails(e.target.value)} // 타이핑 시 details 상태 업데이트
             onKeyDown={handleKeyDown} // Enter 키 입력 시 검색 함수 실행
           />
           <button
-            className="w-[30px] h-[30px] flex items-center justify-center rounded-full bg-[#FF6C29]"
+            className="w-[30px] h-[30px] flex items-center justify-center rounded-full bg-[#FF6C29] flex-shrink-0"
             onClick={handleSearch} // 검색 버튼 클릭 시 검색 함수 실행>
             disabled={loading}
           >

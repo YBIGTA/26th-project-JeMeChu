@@ -17,23 +17,33 @@ export const parseRestaurantData = (restaurant: Partial<Restaurant>): Restaurant
   }
 
   // ✅ Ensure menu is always an array of [string, number]
-  let parsedMenu: [string, number][] = [];
+  let parsedMenu: [string, number | null][] = [];
   if (typeof restaurant.menu === "string") {
     try {
       const tempMenu = JSON.parse(restaurant.menu.replace(/'/g, '"'));
       if (Array.isArray(tempMenu)) {
-        parsedMenu = tempMenu.map((item) =>
-          Array.isArray(item) && typeof item[0] === "string" && typeof item[1] === "number"
-            ? [item[0], item[1]]
-            : ["Unknown", 0]
-        );
+        parsedMenu = tempMenu.map((item) => {
+          if (Array.isArray(item) && typeof item[0] === "string") {
+            const menuName = item[0].trim() || "Unknown"; // 메뉴명 필터링
+            const price = typeof item[1] === "number" && !isNaN(item[1]) ? item[1] : null; // 가격이 숫자가 아니면 null 처리
+            return [menuName, price];
+          }
+          return ["Unknown", null]; // 잘못된 데이터는 Unknown 처리
+        });
       }
     } catch (err) {
       console.warn("menu 파싱 실패:", err);
       parsedMenu = [];
     }
   } else if (Array.isArray(restaurant.menu)) {
-    parsedMenu = restaurant.menu;
+    parsedMenu = restaurant.menu.map((item) => {
+      if (Array.isArray(item) && typeof item[0] === "string") {
+        const menuName = item[0].trim() || "Unknown";
+        const price = typeof item[1] === "number" && !isNaN(item[1]) ? item[1] : null;
+        return [menuName, price];
+      }
+      return ["Unknown", null];
+    });
   } else {
     parsedMenu = [];
   }

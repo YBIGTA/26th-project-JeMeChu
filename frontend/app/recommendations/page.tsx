@@ -163,16 +163,20 @@ const RecommendationsPage = () => {
                         )}
                       </div>
                       {/* ✅ Menu (First Item) */}
-                      {restaurant.menu?.length > 0 && (
-                        <p className="text-black font-normal mt-2 flex items-center">
-                          🍽️ <span className="ml-1">메뉴:</span>
-                          <span className="font-medium font-opacity-70 ml-1">
-                            {restaurant.menu[0]?.[0]}
-                            {restaurant.menu[0]?.[1] != 0 && (
-                              <> ({restaurant.menu[0][1].toLocaleString()}원)</>
-                            )}
-                          </span>
-                        </p>
+                      {restaurant.menu &&
+                        Array.isArray(restaurant.menu) &&
+                        restaurant.menu.length > 0 &&
+                        restaurant.menu[0]?.[0] &&
+                        restaurant.menu[0]?.[0] !== "Unknown" && ( // "Unknown"이면 표시하지 않음
+                          <p className="text-black font-normal mt-2 flex items-center">
+                            🍽️ <span className="ml-1">메뉴:</span>
+                            <span className="font-medium font-opacity-70 ml-1">
+                              {restaurant.menu[0][0]}
+                              {restaurant.menu[0]?.[1] && restaurant.menu[0][1] !== 0 && (
+                                <> ({restaurant.menu[0][1].toLocaleString()}원)</>
+                              )}
+                            </span>
+                          </p>
                       )}
 
                       {/* ✅ Reason */}
@@ -229,24 +233,32 @@ const RecommendationsPage = () => {
 
           {/* ✅ 메뉴 & 영업시간을 반반 정렬 */}
           <div className="grid grid-cols-2 gap-4">
-            {/* ✅ 메뉴 */}
-            <div>
-              {selectedRestaurant.menu && (
-                <div className="text-gray-600 text-sm">
-                  <p className="font-bold flex items-center gap-1">
-                    🍽️ 메뉴:
-                  </p>
-                  <div className="mt-1 pl-4 border-l-2 border-gray-300">
-                  {(Array.isArray(selectedRestaurant.menu) ? selectedRestaurant.menu : []).slice(0, 8).map((item: [string, number], index: number) => (
-                      <p key={index}>
-                        <span className="font-medium">{item[0]}</span>
-                        {item[1] !== 0 && ` (${item[1].toLocaleString()}원)`}
-                      </p>
-                    ))}
-                  </div>
-                </div>
+          {/* ✅ 메뉴 */}
+          <div className="text-gray-600 text-sm">
+            <p className="font-bold flex items-center gap-1">
+              🍽️ 메뉴:
+            </p>
+            <div className="mt-1 pl-4 border-l-2 border-gray-300">
+              {selectedRestaurant.menu &&
+              Array.isArray(selectedRestaurant.menu) &&
+              selectedRestaurant.menu.length > 0 &&
+              selectedRestaurant.menu.some(item => Array.isArray(item) && item.length > 0 && item[0] && item[0] !== "Unknown") ? (
+                selectedRestaurant.menu
+                  .filter(item => Array.isArray(item) && item.length > 0 && item[0] && item[0] !== "Unknown") // "Unknown" 필터링
+                  .slice(0, 8)
+                  .map((item: [string, number | null], index: number) => (
+                    <p key={index}>
+                      <span className="font-medium">{item[0]}</span> 
+                      {item[1] !== null && item[1] !== 0 ? ` (${item[1].toLocaleString()}원)` : ""}
+                    </p>
+                  ))
+              ) : (
+                <p className="text-gray-600">정보 없음</p> // ✅ 메뉴가 Unknown만 있으면 "정보 없음" 출력
               )}
             </div>
+          </div>
+
+
 
             {/* ✅ 영업시간 */}
             <div>
@@ -282,12 +294,12 @@ const RecommendationsPage = () => {
             </p>
               
             {/* ✅ 전화번호 */}
-            <p>
-              📞 <b>전화: </b> 
-              {selectedRestaurant.phone 
-                ? selectedRestaurant.phone 
-                : "정보 없음"}
-            </p>
+
+            {selectedRestaurant.phone !== undefined && selectedRestaurant.phone !== null && (
+              <p className="text-gray-600 text-sm">
+                📞 <b>전화번호: </b> {selectedRestaurant.phone || selectedRestaurant.phone.trim() == "NaN" ? "정보 없음" : selectedRestaurant.phone}
+              </p>
+            )}
               
 
             {/* ✅ 주차 정보 */}
@@ -300,7 +312,9 @@ const RecommendationsPage = () => {
             {/* ✅ 좌석 정보 */}
             <p>
               💺 <b>좌석 정보: </b> 
-              {Array.isArray(selectedRestaurant.seat_info) ? selectedRestaurant.seat_info.join(", ") : "정보 없음"}
+              {Array.isArray(selectedRestaurant.seat_info) && selectedRestaurant.seat_info.length > 0 
+                ? selectedRestaurant.seat_info.join(", ") 
+                : "정보 없음"}
             </p>
 
 

@@ -5,20 +5,17 @@ import json
 import os
 import re
 from dotenv import load_dotenv
-
 # Import the session and the updated RealFinal model
 from app.database import SessionLocal, RealFinal
 from Constants import FACILITIES, PARKING, VERY_GOOD, SEATS, TAG_GROUPS
 
 load_dotenv()
-
 class RestaurantFilter:
     def __init__(self):
         self.api_key = os.getenv("OPENAI_API_KEY_QUERY")
         if not self.api_key:
             raise ValueError("OpenAI API Key가 설정되지 않았습니다!")
         self.client = openai.OpenAI(api_key=self.api_key)
-
     def filter_ctgy(self, category: str):
         """
         1차 필터링 - 사용자의 카테고리 선택 (이제 uses realfinal)
@@ -31,16 +28,13 @@ class RestaurantFilter:
             else:
                 # Filter by category field (which must exist in realfinal!)
                 restaurants = session.query(RealFinal).filter(RealFinal.category == category).all()
-
             # Return (id, business_hours) for convenience
             return [(r.id, r.business_hours) for r in restaurants]
-
         except Exception as e:
             print("DB 조회 오류:", e)
             return []
         finally:
             session.close()
-
     def is_restaurant_open(self, business_hours):
         """
         현재 시간을 기준으로 식당이 영업 중인지 판별.
@@ -58,32 +52,26 @@ class RestaurantFilter:
         current_day_en = datetime.today().strftime('%a')
         current_day_kr = day_translation[current_day_en]
         now_time = datetime.now().time()
-
         if not business_hours or business_hours.strip() in ["NaN", ""]:
             return True
-
         for entry in business_hours.split(";"):
             entry = entry.strip()
             try:
                 day, hours = entry.split(":", 1)
                 day = day.strip()
                 hours = hours.strip()
-
                 if "정기휴무" in hours:
                     if current_day_kr in day:
                         return False
                     continue
-
                 if current_day_kr in day:
                     open_str, close_str = hours.split("-")
                     open_str = open_str.strip()
                     close_str = close_str.strip()
-
                     if close_str == "24:00":
                         close_str = "23:59"
                     open_time = datetime.strptime(open_str, "%H:%M").time()
                     close_time = datetime.strptime(close_str, "%H:%M").time()
-
                     if open_time < close_time:
                         if open_time <= now_time <= close_time:
                             return True
@@ -94,7 +82,6 @@ class RestaurantFilter:
             except ValueError:
                 continue
         return False
-
     def filter_business_hours(self, filtered_data):
         """
         2차: 운영 시간 필터링
@@ -107,7 +94,6 @@ class RestaurantFilter:
             if self.is_restaurant_open(bhours):
                 open_restaurants.append(res_id)
         return open_restaurants
-
     def regenerate_query(self, details_input: str):
         """
         Query 재생성 (OpenAI)
@@ -119,14 +105,23 @@ class RestaurantFilter:
         - **주차 관련 키워드(주차 가능, 무료 주차 등)가 있으면 `parking`을 무조건 포함하세요.**
         - **좌석(seats) 관련 단어(단체석, 룸, 바테이블 등)가 있으면 `seats`를 포함하세요.**
         - 다른 카테고리는 중요도를 고려하여 최대 2개만 선택하세요.
-
         ### 사용 가능한 값:
         - **facilities**: {", ".join(FACILITIES)}
         - **parking**: {", ".join(PARKING)}
         - **very_good**: {", ".join(VERY_GOOD)}
         - **seat_info**: {", ".join(SEATS)}
+        ### 예시:
+        - 입력: '김치찌개 조용하고 주차할 수 있는 데서 먹고 싶어'
+          출력: {{"very_good": ["조용히 쉬기 좋아요"], "parking": ["주차 가능"]}}
+        - 입력: '단체석 있고 와인 추천 잘해주는 곳'
+          출력: {{"facilities": ["와인 페어링"], "seat_info": ["와인 페어링"]}}
+        - 입력: '아늑한 분위기의 조용한 식당'
+          출력: {{"very_good": ["아늑해요", "조용히 쉬기 좋아요"]}}
+        - 입력: '대기공간 있고, 유아의자 있는 곳'
+          출력: {{"facilities": ["대기공간", "유아의자"]}}
+        - 입력: '5명이서 다 기분 좋게 기분전환할 수 있는 식당'
+        - 출력: {{"seat_info": ["단체석"], "very_good": ["분위기가 편안해요"]}}
         """
-
         try:
             response = self.client.chat.completions.create(
                 model="gpt-4-turbo",
@@ -135,33 +130,26 @@ class RestaurantFilter:
                     {"role": "user", "content": details_input},
                 ]
             )
-            
             content = response.choices[0].message.content.strip()
             print("1차 필터링 expanded_query 원본:", content)  # 디버깅
-
             # `json` 코드 블록이 포함된 경우 제거
             json_match = re.search(r"```json\s*(\{.*\})\s*```", content, re.DOTALL)
             if json_match:
                 json_str = json_match.group(1).strip()
             else:
                 json_str = content  # 만약 코드 블록이 없으면 원본 사용
-
             # JSON 디코딩 (예외 처리 포함)
             expanded_query = json.loads(json_str)
-            
             return expanded_query
-        
         except Exception as e:
             print("OpenAI API 요청 실패:", e)
             return {}
-
     def filter_expanded_query(self, filtered_restaurant_ids, expanded_query):
         """
         3차: 태그 매칭
         """
         if not filtered_restaurant_ids:
             return []
-
         session = SessionLocal()
         try:
             # Query from realfinal with a WHERE id IN (...)
@@ -170,7 +158,6 @@ class RestaurantFilter:
                 .filter(RealFinal.id.in_(filtered_restaurant_ids))
                 .all()
             )
-
             matched_restaurants = []
             for r in restaurants:
                 # Convert None => ""
@@ -178,7 +165,6 @@ class RestaurantFilter:
                 r_parking = r.parking or ""
                 r_very_good = r.very_good or ""
                 r_seat_info = r.seat_info or ""
-
                 match_found = False
                 for category, tags in expanded_query.items():
                     if category == "facilities":
@@ -194,21 +180,15 @@ class RestaurantFilter:
                     elif category == "seats":
                         if any(tag in r_seat_info for tag in tags):
                             match_found = True
-
                 if match_found:
                     matched_restaurants.append(r.id)
-
             if not matched_restaurants:
                 # If no matches, just return everything from the prior stage
                 return filtered_restaurant_ids
-            
             print("1차 restaurants_filter 완료~\nID:", matched_restaurants, "\n")
-
             return matched_restaurants
-
         except Exception as e:
             print("DB 조회 오류:", e)
             return []
-        
         finally:
             session.close()
