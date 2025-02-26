@@ -7,9 +7,7 @@ __pycache__/
 dmypy.json
 
 # macOS system files
-database/
 .DS_Store
-database/restaurant.csv
 
 # frontend
 # Logs
@@ -52,3 +50,5 @@ embedding/embedded_data_temp.csv
 server/embedded_data.csv
 venv/
 __pycache__/
+
+database_big/
