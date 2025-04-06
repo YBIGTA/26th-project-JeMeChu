@@ -3,7 +3,7 @@
 
 ---
 
-## 이미지 미리보기
+## 요약
 
 ![1](images/1.png)
 ![2](images/2.png)
@@ -13,7 +13,8 @@
 
 ---
 
-## 프로젝트 폴더 구조
+## Repository 구조
+```
 ├── .gitignore                     # Git에서 제외할 파일 목록
 ├── README.md                     # 프로젝트 소개 문서
 
@@ -166,3 +167,4 @@
     ├── preprocessed_naver.csv
     ├── test.txt
     └── translate_test.ipynb
+```
