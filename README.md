@@ -15,7 +15,8 @@
 
 ## 소개
 
-사용자의 자연어 입력을 기반으로, 합정/서교동 지역 맛집 중 조건에 맞는 식당을 추천해주는 서비스입니다. \\
+사용자의 자연어 입력을 기반으로, 합정/서교동 지역 맛집 중 조건에 맞는 식당을 추천해주는 서비스입니다.  
+
 LangChain과 Pinecone을 활용한 RAG 파이프라인으로 동작하며, 식당 리뷰 데이터를 통해 추천 사유까지 자연어로 설명합니다.
 
 ---
@@ -34,7 +35,7 @@ LangChain과 Pinecone을 활용한 RAG 파이프라인으로 동작하며, 식�
 ---
 
 ## 기술 스택
-```
+
 | 파트        | 기술                    |
 |-------------|-------------------------|
 | 프론트엔드   | Next.js, Tailwind, TypeScript |
@@ -42,7 +43,7 @@ LangChain과 Pinecone을 활용한 RAG 파이프라인으로 동작하며, 식�
 | 임베딩       | OpenAI embedding          |
 | DB           | PostgreSQL              |
 | LLM 활용      | OpenAI GPT-4o mini       |
-```
+
 ---
 
 ## Repository 구조
@@ -202,8 +203,12 @@ LangChain과 Pinecone을 활용한 RAG 파이프라인으로 동작하며, 식�
 ```
 ## TEAM 
 
-<img src="https://github.com/Mookjsi.png" width="30"/> [강정묵](https://github.com/Mookjsi)
-<img src="https://github.com/yunbeeee.png" width="30"/> [엄윤희](https://github.com/yunbeeee)
-이경민
-<img src="https://github.com/sleepylee02.png" width="30"/> [이재영](https://github.com/sleepylee02)
+<img src="https://github.com/Mookjsi.png" width="30"/> [강정묵](https://github.com/Mookjsi)  
+
+<img src="https://github.com/yunbeeee.png" width="30"/> [엄윤희](https://github.com/yunbeeee)  
+
+이경민  
+
+<img src="https://github.com/sleepylee02.png" width="30"/> [이재영](https://github.com/sleepylee02)  
+
 <img src="https://github.com/mjxjung.png" width="30"/> [정민지](https://github.com/mjxjung)
