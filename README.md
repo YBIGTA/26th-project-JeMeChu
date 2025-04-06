@@ -13,6 +13,38 @@
 
 ---
 
+## 소개
+
+사용자의 자연어 입력을 기반으로, 합정/서교동 지역 맛집 중 조건에 맞는 식당을 추천해주는 서비스입니다. \\
+LangChain과 Pinecone을 활용한 RAG 파이프라인으로 동작하며, 식당 리뷰 데이터를 통해 추천 사유까지 자연어로 설명합니다.
+
+---
+
+## 전체 파이프라인
+
+1. **합정/서교동 공공 식당 데이터 인덱싱**
+2. **네이버 지도 크롤링 → 리뷰 수집**
+3. **전처리 및 필터링 (카테고리, 영업시간 등)** → PostgreSQL 저장
+4. **GPT-4o mini를 활용한 사용자 세부 조건 파싱 (JSON 반환)**
+5. **PostgreSQL에서 조건 기반 필터링**
+6. **Pinecone에서 리뷰 임베딩 유사도 기반 검색 (top 3)**
+7. **LangChain으로 추천 사유 생성**
+8. **Next.js 프론트에서 결과 출력**
+
+---
+
+## 기술 스택
+```
+| 파트        | 기술                    |
+|-------------|-------------------------|
+| 프론트엔드   | Next.js, Tailwind, TypeScript |
+| 백엔드       | FastAPI, LangChain, Pinecone |
+| 임베딩       | OpenAI embedding          |
+| DB           | PostgreSQL              |
+| LLM 활용      | OpenAI GPT-4o mini       |
+```
+---
+
 ## Repository 구조
 ```
 ├── .gitignore                     # Git에서 제외할 파일 목록
@@ -168,3 +200,10 @@
     ├── test.txt
     └── translate_test.ipynb
 ```
+## TEAM 
+
+<img src="https://github.com/Mookjsi.png" width="30"/> [강정묵](https://github.com/Mookjsi)
+<img src="https://github.com/yunbeeee.png" width="30"/> [엄윤희](https://github.com/yunbeeee)
+이경민
+<img src="https://github.com/sleepylee02.png" width="30"/> [이재영](https://github.com/sleepylee02)
+<img src="https://github.com/mjxjung.png" width="30"/> [정민지](https://github.com/mjxjung)
